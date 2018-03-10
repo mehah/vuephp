@@ -3,8 +3,35 @@ namespace fw\database;
 
 class DatabaseEntity
 {
-
-    public static function load($entity): bool
+    public static function all(string $className) : Array
+    {
+        try {
+            $conn = DatabaseConnection::getInstance();
+            
+            $class = new \ReflectionClass($className);
+            
+            $tableName = $class->getProperty("table")->getValue();
+            $primaryKey = $class->getProperty("primaryKey")->getValue();
+            
+            $stmt = $conn->query('SELECT * FROM `' . $tableName);
+            
+            $res = $stmt->execute();
+            
+            if ($res) {
+                $list = Array();
+                while($entityDB = $stmt->fetchObject($class->getName())) {
+                    array_push($list, $entityDB);
+                }
+                return $list;
+            }
+        } catch (\Exception $e) {
+            echo $e;
+        }
+        
+        return null;
+    }
+    
+    public static function load(Entity $entity): bool
     {
         try {
             $conn = DatabaseConnection::getInstance();
@@ -40,7 +67,7 @@ class DatabaseEntity
         return false;
     }
 
-    public static function insert($entity): bool
+    public static function insert(Entity $entity): bool
     {
         try {
             $conn = DatabaseConnection::getInstance();
@@ -85,7 +112,7 @@ class DatabaseEntity
         return false;
     }
 
-    public static function update($entity): bool
+    public static function update(Entity $entity): bool
     {
         try {
             $conn = DatabaseConnection::getInstance();
@@ -133,7 +160,7 @@ class DatabaseEntity
         return false;
     }
 
-    public static function delete($entity): bool
+    public static function delete(Entity $entity): bool
     {
         try {
             $conn = DatabaseConnection::getInstance();

@@ -5,4 +5,7 @@ this.methods.cadastrar = function() {
 };
 
 this.methods.consultar = function() {
+	this.$http.get('consultarUser').then(({ data }) => {
+		updateContent('content', data);
+    });
 };

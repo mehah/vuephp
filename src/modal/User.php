@@ -1,7 +1,9 @@
 <?php
 namespace modal;
 
-class User
+use fw\database\Entity;
+
+class User extends Entity
 {
 
     public static $table = 'users';

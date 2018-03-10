@@ -1,0 +1,10 @@
+<table>
+	<thead><tr><th>Nome</th><th>E-mail</th><th>Ação</th></tr></thead>
+	<tbody>
+		<tr v-for="user in users">
+			<td>{{user.name}}</td>
+			<td>{{user.email}}</td>
+			<td><a href="#" @click="redirect('manterUser/'+user.id)">Alterar</a></td>	
+		</tr>
+	</tbody>
+</table>

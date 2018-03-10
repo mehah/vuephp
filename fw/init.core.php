@@ -23,6 +23,7 @@ if (isset($exURL [1])) {
 include ('fw/VueApp.php');
 include ('fw/database/DatabaseConnection.php');
 include ('fw/database/DatabaseEntity.php');
+include ('fw/database/Entity.php');
 include ('database.config.php');
 
 $TARGET_NAME = $exURL [0];
