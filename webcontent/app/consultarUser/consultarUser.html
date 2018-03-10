@@ -5,9 +5,10 @@
 			<td>{{user.name}}</td>
 			<td>{{user.email}}</td>
 			<td>
-				<a href="#" @click="redirect('manterUser/'+user.id)">Alterar</a>
+				<a href="#" v-goto:manterUser="user.id">Alterar</a>
 				<a href="#" @click="request('manterUser/remover', user)">Remover</a>
 			</td>	
 		</tr>
 	</tbody>
 </table>
+<button v-goto:index>Voltar</button>

@@ -79,10 +79,10 @@ if (file_exists($srcPath)) {
 }
 
 if (! $HAS_METHOD) {
-    $url = 'webcontent/app/' . $TARGET_NAME . '/';
-    $templateURL = $url . 'view.html';
+    $url = 'webcontent/app/' . $TARGET_NAME . '/' . $TARGET_NAME;
+    $templateURL = $url . '.html';
     if (file_exists($templateURL)) {
-        $appURL = $url . 'controller.js';
+        $appURL = $url . '.js';
         echo '<script>
             var TEMP_OBJECT = {data: ' . $data . ', methods: '.$methodsList.'};
             ' . (! file_exists($appURL) ? '' : '
