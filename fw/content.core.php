@@ -79,10 +79,10 @@ if (file_exists($srcPath)) {
 }
 
 if (! $HAS_METHOD) {
-    $url = 'webcontent/app/' . $TARGET_NAME . '/' . $TARGET_NAME;
-    $templateURL = $url . '.html';
+    $url = 'webcontent/app/' . $TARGET_NAME . '/';
+    $templateURL = $url . 'view.html';
     if (file_exists($templateURL)) {
-        $appURL = $url . '.js';
+        $appURL = $url . 'controller.js';
         echo '<script>
             var TEMP_OBJECT = {data: ' . $data . ', methods: '.$methodsList.'};
             ' . (! file_exists($appURL) ? '' : '
@@ -90,8 +90,8 @@ if (! $HAS_METHOD) {
                 TEMP_FUNC.call(TEMP_OBJECT);
             ') . '					
 
-			new Vue({el : "#content", data: {HTMLcontent: `' . addslashes(file_get_contents($templateURL)) . '`}});                    
-			new Vue({el : "#content", mixins: [TEMP_OBJECT, VUE_GLOBAL]});
+			new Vue({el : TEMP_OBJECT.el, data: {HTMLcontent: `' . addslashes(file_get_contents($templateURL)) . '`}});                    
+			new Vue({el : TEMP_OBJECT.el, mixins: [TEMP_OBJECT, VUE_GLOBAL]});
         </script>';
     }
 }

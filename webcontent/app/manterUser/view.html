@@ -4,4 +4,4 @@
 <div>
 	<label for="email">E-Mail</label><input name="email" v-model="user.email" />
 </div>
-<button v-on="{click: user.id ? alterar : cadastrar}">{{user.id ? 'Alterar' : 'Cadastrar'}}</button>
+<button @click="(user.id ? alterar : inserir)(user)">{{user.id ? 'Alterar' : 'Cadastrar'}}</button>

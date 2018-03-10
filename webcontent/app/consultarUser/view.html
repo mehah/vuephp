@@ -4,7 +4,10 @@
 		<tr v-for="user in users">
 			<td>{{user.name}}</td>
 			<td>{{user.email}}</td>
-			<td><a href="#" @click="redirect('manterUser/'+user.id)">Alterar</a></td>	
+			<td>
+				<a href="#" @click="redirect('manterUser/'+user.id)">Alterar</a>
+				<a href="#" @click="request('manterUser/remover', user)">Remover</a>
+			</td>	
 		</tr>
 	</tbody>
 </table>
