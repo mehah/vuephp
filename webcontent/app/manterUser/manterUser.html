@@ -1,0 +1,7 @@
+<div>
+	<label for="name">Name</label><input name="name" v-model="user.name" />
+</div>
+<div>
+	<label for="email">E-Mail</label><input name="email" v-model="user.email" />
+</div>
+<button v-on="{click: user.id ? alterar : cadastrar}">{{user.id ? 'Alterar' : 'Cadastrar'}}</button>
