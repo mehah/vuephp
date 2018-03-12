@@ -1,7 +1,8 @@
 <table>
-	<thead><tr><th>Nome</th><th>E-mail</th><th>Ação</th></tr></thead>
+	<thead><tr><th><input type="checkbox" name="selecionarTodos" @change="selecionarTodos"/> Selecionar Todos</th><th>Nome</th><th>E-mail</th><th>Ação</th></tr></thead>
 	<tbody>
 		<tr v-for="user in users">
+			<td><input type="checkbox" v-model="usersCheckeds" :value="user" /></td>
 			<td>{{user.name}}</td>
 			<td>{{user.email}}</td>
 			<td>
@@ -11,4 +12,5 @@
 		</tr>
 	</tbody>
 </table>
+<button @click="deletarTodos">Deletar Todos Selecionados</button>
 <button v-goto:index>Voltar</button>

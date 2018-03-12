@@ -17,7 +17,6 @@ class ManterUserController
         }
         
         $data = VueApp::getData();
-        $data->id = $id;
         $data->user = $user;
         
         return $data;
@@ -28,12 +27,12 @@ class ManterUserController
         $user->insert();
     }
 
-    public function atualizar(User $user)
+    public function alterar(User $user)
     {
         $user->update();
     }
 
-    public function deletar(User $user)
+    public function remover(User $user)
     {
         $user->delete();
     }

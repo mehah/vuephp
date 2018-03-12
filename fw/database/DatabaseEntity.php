@@ -13,7 +13,7 @@ class DatabaseEntity
             $tableName = $class->getProperty("table")->getValue();
             $primaryKey = $class->getProperty("primaryKey")->getValue();
             
-            $stmt = $conn->query('SELECT * FROM `' . $tableName);
+            $stmt = $conn->query('SELECT * FROM ' . $tableName);
             
             $res = $stmt->execute();
             
