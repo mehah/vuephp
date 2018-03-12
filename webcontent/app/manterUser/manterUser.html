@@ -5,4 +5,4 @@
 	<label for="email">E-Mail</label><input name="email" v-model="user.email" />
 </div>
 <button @click="(user.id ? alterar : inserir)(user)">{{user.id ? 'Alterar' : 'Cadastrar'}}</button>
-<button v-goto:index>Voltar</button>
+<button @click="goback">Voltar</button>

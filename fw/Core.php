@@ -3,18 +3,22 @@ namespace fw;
 
 class Core
 {
+
     public static $PROJECT_NAME = 'ARQUITETURA';
+
+    public static $APP_HOME_PATH = 'home';
 
     public static function init(): void
     {
         $TAGET_CLASS_NAME = $TARGET_NAME = null;
         $HAS_METHOD = false;
-        unset($_SESSION);
-        if (! isset($_REQUEST['url'])) {
-            $_REQUEST['url'] = "index";
+        $APP_URL = self::$APP_HOME_PATH;
+        
+        if (isset($_REQUEST['url'])) {
+            $APP_URL = $_REQUEST['url'];
         }
         
-        $exURL = explode("/", $_REQUEST['url'], 3);
+        $exURL = explode("/", $APP_URL, 3);
         $CONTEXT_PATH = str_repeat('../', count($exURL) - 1);
         
         if (isset($exURL[1])) {
@@ -50,7 +54,9 @@ class Core
         $IS_AJAX = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && ! empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
         
         if (! $IS_AJAX) {
-            $INDEX_CONTENT = '<script type="text/javascript" src="' . $CONTEXT_PATH . 'fw/vue.min.js"></script>' . file_get_contents('webcontent/index.html');
+            $INDEX_CONTENT = '
+                <script type="text/javascript" src="' . $CONTEXT_PATH . 'fw/vue.min.js"></script>
+            ' . file_get_contents('webcontent/index.html');
         }
         
         $srcPath = 'src/controller/' . $TAGET_CLASS_NAME . 'Controller.php';
@@ -90,12 +96,13 @@ class Core
                     $methodsList .= ',';
                 }
                 
-                $methodsList .= $methodName . ':function(param){this.request("' . $TARGET_NAME . '/' . $methodName . '", param);}';
+                $methodsList .= $methodName . ':function(p){this.request("' . $TARGET_NAME . '/' . $methodName . '", p);}';
             }
             
             $methodsList = '{' . $methodsList . '}';
-            if ($reflectionClass->hasMethod($exURL[$posMethod])) {
-                $reflectionMethod = $reflectionClass->getMethod($exURL[$posMethod]);
+            $methodName = $exURL[$posMethod];
+            if ($reflectionClass->hasMethod($methodName)) {
+                $reflectionMethod = $reflectionClass->getMethod($methodName);
                 
                 if (isset($_REQUEST['arg0']) && $reflectionMethod->getNumberOfParameters() == 1) {
                     $data = $_REQUEST['arg0'];
@@ -129,14 +136,14 @@ class Core
                     $data = '{}';
                 }
             }
-            
         }
+        
         if (! $HAS_METHOD) {
             $url = 'webcontent/app/' . $TARGET_NAME . '/' . $TARGET_NAME;
             $templateURL = $url . '.html';
             if (file_exists($templateURL)) {
                 $appURL = $url . '.js';
-                $INDEX_CONTENT .= '<script>
+                $script = '
                     var TEMP_OBJECT = {data: ' . $data . ', methods: ' . $methodsList . '};
                     ' . (! file_exists($appURL) ? '' : '
                         TEMP_FUNC = function() {' . file_get_contents($appURL) . '};
@@ -145,7 +152,9 @@ class Core
                         
                      document.querySelector(TEMP_OBJECT.el).innerHTML = `' . addslashes(file_get_contents($templateURL)) . '`;
         			new Vue({el : TEMP_OBJECT.el, mixins: [TEMP_OBJECT, VUE_GLOBAL]});
-                </script>';
+                ';
+                
+                $INDEX_CONTENT .= $IS_AJAX ? $script : '<script>'.$script.'</script>';
             }
         }
         
