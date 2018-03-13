@@ -6,7 +6,7 @@
 			<td>{{user.name}}</td>
 			<td>{{user.email}}</td>
 			<td>
-				<a href="#" v-goto:manterUser="user.id">Alterar</a>
+				<a v-goto:manterUser="user.id">Alterar</a>
 				<a href="#" @click.prevent="remover(user)">Remover</a>
 			</td>	
 		</tr>

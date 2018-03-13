@@ -122,7 +122,7 @@ class Core
                         
                         foreach ($defaults as $key => $value) {
                             if (array_key_exists($key, $data)) {
-                                $value = $data[$key];
+                                $value = &$data->{$key};
                                 $object->{$key} = $value ? $value : null;
                             }
                         }
@@ -165,24 +165,33 @@ class Core
                         TEMP_FUNC = function() {' . file_get_contents($appURL) . '};
                         TEMP_FUNC.call(TEMP_OBJECT);
                     ') . '
-                     var elementPrincipal = document.querySelector(TEMP_OBJECT.el);
+                    var elementPrincipal = document.querySelector(TEMP_OBJECT.el);
                     var content = elementPrincipal.querySelector("content");
                     if(!content) {
                         content = document.createElement("content");
                         elementPrincipal.appendChild(content);
                     }
                     content.innerHTML = `' . addslashes(file_get_contents($templateURL)) . '`;
-        			var VUE_CONTEXT = new Vue({el : TEMP_OBJECT.el, mixins: [TEMP_OBJECT, VUE_GLOBAL], created: function(){'.$executeMethods.'}});
+                    if(VUE_CONTEXT[TEMP_OBJECT.el]) {
+                        VUE_CONTEXT[TEMP_OBJECT.el].$destroy();
+                        delete VUE_CONTEXT[TEMP_OBJECT.el];
+                    }
+        			VUE_CONTEXT[TEMP_OBJECT.el] = new Vue({el : TEMP_OBJECT.el, mixins: [TEMP_OBJECT, VUE_GLOBAL], created: function(){'.$executeMethods.'}});
                 ';
                 
-                $INDEX_CONTENT .= $IS_AJAX ? $script : '<script>'.$script.'</script>';
+                $INDEX_CONTENT .= $IS_AJAX ? $script : '<script id="!script">'.$script.'document.getElementById("\!script").remove();</script>';
             }
         }
         
-        if (! $IS_AJAX) {
+        if (!$IS_AJAX) {
             $url = $CONTEXT_PATH . 'webcontent/main.js';
             if (file_exists($url)) {
                 $INDEX_CONTENT .= '<script type="text/javascript" src="' . $url . '"></script>';
+            }
+            
+            $url = $CONTEXT_PATH . 'webcontent/styles.css';
+            if (file_exists($url)) {
+                $INDEX_CONTENT .= '<link rel="stylesheet" type="text/css" href="'.$url.'">';
             }
         }
         

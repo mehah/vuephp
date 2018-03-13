@@ -29,9 +29,9 @@ abstract class Entity
         return DatabaseEntity::all(get_called_class());
     }
 
-    public static function deleteByFields(Array $fields): bool
+    public static function deleteWithFilter(Array $fieldsFilter): bool
     {
-        return DatabaseEntity::deleteByFields(get_called_class(), $fields);
+        return DatabaseEntity::deleteWithFilter(get_called_class(), $fieldsFilter);
     }
 }
 
