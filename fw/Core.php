@@ -32,7 +32,7 @@ class Core
             }
         }
         
-        include ('fw/VueApp.php');
+        include ('fw/VueController.php');
         include ('fw/database/DatabaseConnection.php');
         include ('fw/database/DatabaseEntity.php');
         include ('fw/database/Entity.php');
@@ -76,7 +76,11 @@ class Core
             }
             
             if (! $controller) {
-                $_SESSION[$controllerPath] = $controller = new $className();
+                $controller = new $className();
+                if(!($controller instanceof VueController)) {
+                    die('O controlador '.$className.' precisa extender a classe VueController.');
+                }
+                $_SESSION[$controllerPath] = $controller;
             }
             
             $posMethod = count($exURL) - 1;
@@ -96,7 +100,7 @@ class Core
                     $methodsList .= ',';
                 }
                 
-                $methodsList .= $methodName . ':function(p){this.request("' . $TARGET_NAME . '/' . $methodName . '", p);}';
+                $methodsList .= $methodName . ':function(p, c){this.request("' . $TARGET_NAME . '/' . $methodName . '", p, c);}';
             }
             
             $methodsList = '{' . $methodsList . '}';
@@ -105,7 +109,7 @@ class Core
                 $reflectionMethod = $reflectionClass->getMethod($methodName);
                 
                 if (isset($_REQUEST['arg0']) && $reflectionMethod->getNumberOfParameters() == 1) {
-                    $data = $_REQUEST['arg0'];
+                    $data = json_decode($_REQUEST['arg0']);
                     
                     $classType = $reflectionMethod->getParameters()[0]->getType();
                     
@@ -126,35 +130,59 @@ class Core
                         $object = $data;
                     }
                     
-                    $data = $reflectionMethod->invoke($controller, $object);
+                    $reflectionMethod->invoke($controller, $object);
                 } else {
-                    $data = $reflectionMethod->invoke($controller);
+                    $reflectionMethod->invoke($controller);
                 }
-                if ($data && is_object($data)) {
-                    $data = json_encode($data, JSON_FORCE_OBJECT);
-                } else {
-                    $data = '{}';
-                }
+                
+                $reflectionClass = new \ReflectionClass('fw\VueController');
+                $propData = $reflectionClass->getProperty("_VUE_DATA");
+                $propData->setAccessible(true);
+                $data = $propData->getValue ($controller);
+                $propData->setValue($controller, new \stdClass);
             }
         }
         
-        if (! $HAS_METHOD) {
+        if ($HAS_METHOD) {
+            if(isset($data->d)) {
+                $INDEX_CONTENT = json_encode($data);
+            }
+        } else {
             $url = 'webcontent/app/' . $TARGET_NAME . '/' . $TARGET_NAME;
             $templateURL = $url . '.html';
             if (file_exists($templateURL)) {
+                $executeMethods = '';
+                if(isset($data->m)) {
+                    foreach ($data->m as $methodName) {
+                        $executeMethods .= 'this.'.$methodName.'();';
+                    }
+                }
+                
                 $appURL = $url . '.js';
                 $script = '
-                    var TEMP_OBJECT = {data: ' . $data . ', methods: ' . $methodsList . '};
+                    var TEMP_OBJECT = {data: ' . (isset($data->d) ? json_encode($data->d) : '{}') . ', methods: ' . $methodsList . '};
                     ' . (! file_exists($appURL) ? '' : '
                         TEMP_FUNC = function() {' . file_get_contents($appURL) . '};
                         TEMP_FUNC.call(TEMP_OBJECT);
                     ') . '
-                        
-                     document.querySelector(TEMP_OBJECT.el).innerHTML = `' . addslashes(file_get_contents($templateURL)) . '`;
-        			new Vue({el : TEMP_OBJECT.el, mixins: [TEMP_OBJECT, VUE_GLOBAL]});
+                     var elementPrincipal = document.querySelector(TEMP_OBJECT.el);
+                    var content = elementPrincipal.querySelector("content");
+                    if(!content) {
+                        content = document.createElement("content");
+                        elementPrincipal.appendChild(content);
+                    }
+                    content.innerHTML = `' . addslashes(file_get_contents($templateURL)) . '`;
+        			var VUE_CONTEXT = new Vue({el : TEMP_OBJECT.el, mixins: [TEMP_OBJECT, VUE_GLOBAL], created: function(){'.$executeMethods.'}});
                 ';
                 
                 $INDEX_CONTENT .= $IS_AJAX ? $script : '<script>'.$script.'</script>';
+            }
+        }
+        
+        if (! $IS_AJAX) {
+            $url = $CONTEXT_PATH . 'webcontent/main.js';
+            if (file_exists($url)) {
+                $INDEX_CONTENT .= '<script type="text/javascript" src="' . $url . '"></script>';
             }
         }
         

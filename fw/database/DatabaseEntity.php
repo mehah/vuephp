@@ -180,5 +180,24 @@ class DatabaseEntity
         
         return false;
     }
+    
+    public static function deleteByFields(string $className, Array $fields) : bool
+    {
+        if(!$fields || count($fields) == 0) {
+            throw new \Exception("Não foi definido os campos para filtro.");
+        }
+
+        $class = new \ReflectionClass($className);
+        $tableName = $class->getProperty("table")->getValue();
+        
+        $filter = '';
+        foreach ($fields as $key=>$value) {
+            $filter .= ' AND '.$key.(is_array($value) ? ' in ('.implode(',', $value).')' :  '='.(is_string($value) ? '\''.$value.'\'' : $value));
+        }
+        
+        $conn = DatabaseConnection::getInstance();
+        
+        return $conn->exec('DELETE FROM ' . $tableName.' WHERE 1'.$filter) > 0;
+    }
 }
 

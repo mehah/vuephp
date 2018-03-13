@@ -1,13 +1,12 @@
 <?php
 namespace src\controller;
 
-use fw\VueApp;
+use fw\VueController;
 use modal\User;
 
-class ManterUserController
+class ManterUserController extends VueController
 {
-
-    public function init(int $id = null)
+    public function init(int $id = null) : void
     {
         $user = new User();
         
@@ -16,25 +15,20 @@ class ManterUserController
             $user->load();
         }
         
-        $data = VueApp::getData();
-        $data->user = $user;
-        
-        return $data;
+        $this->setData('user', $user);
+        $this->setData('messageCadastro', null);
     }
 
-    public function inserir(User $user)
-    {
+    public function inserir(User $user) : void
+    {        
         $user->insert();
+        
+        $this->setData('messageCadastro', 'Cadastrado com sucesso!');
     }
 
-    public function alterar(User $user)
+    public function alterar(User $user) : void
     {
         $user->update();
-    }
-
-    public function remover(User $user)
-    {
-        $user->delete();
     }
 }
 

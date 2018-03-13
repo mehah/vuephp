@@ -1,16 +1,26 @@
 <?php
 namespace src\controller;
 
-use fw\VueApp;
+use fw\VueController;
 use modal\User;
+use src\service\UserService;
 
-class ConsultarUserController
+class ConsultarUserController extends VueController
 {
-    public function init() : \stdClass
+
+    public function init(): void
     {
-        $data = VueApp::getData();
-        $data->users = User::all();
-        return $data;
+        $this->setData('users', User::all());
+    }
+
+    public function deletar(User $user): void
+    {
+        $user->delete();
+    }
+
+    public function deletarSelecionados(Array $users): void
+    {
+        UserService::deletarUsuarios($users);
     }
 }
 
