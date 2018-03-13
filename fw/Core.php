@@ -4,15 +4,16 @@ namespace fw;
 class Core
 {
 
-    public static $PROJECT_NAME = 'ARQUITETURA';
-
-    public static $APP_HOME_PATH = 'home';
+    public static $PROJECT_NAME;
+    public static $PRINCIPAL_MODULE_NAME;
 
     public static function init(): void
     {
+        include ('project.config.php');
+        
         $TAGET_CLASS_NAME = $TARGET_NAME = null;
         $HAS_METHOD = false;
-        $APP_URL = self::$APP_HOME_PATH;
+        $APP_URL = self::$PRINCIPAL_MODULE_NAME;
         
         if (isset($_REQUEST['url'])) {
             $APP_URL = $_REQUEST['url'];
@@ -54,9 +55,19 @@ class Core
         $IS_AJAX = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && ! empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
         
         if (! $IS_AJAX) {
-            $INDEX_CONTENT = '
-                <script type="text/javascript" src="' . $CONTEXT_PATH . 'fw/vue.min.js"></script>
-            ' . file_get_contents('webcontent/index.html');
+            $INDEX_CONTENT .= '<script type="text/javascript" src="' . $CONTEXT_PATH . 'fw/vue.min.js"></script>';
+            
+            $url = $CONTEXT_PATH . 'webcontent/main.js';
+            if (file_exists($url)) {
+                $INDEX_CONTENT .= '<script type="text/javascript" src="' . $url . '"></script>';
+            }
+            
+            $url = $CONTEXT_PATH . 'webcontent/styles.css';
+            if (file_exists($url)) {
+                $INDEX_CONTENT .= '<link rel="stylesheet" type="text/css" href="'.$url.'">';
+            }
+            
+            $INDEX_CONTENT .= file_get_contents('webcontent/index.html');
         }
         
         $srcPath = 'src/controller/' . $TAGET_CLASS_NAME . 'Controller.php';
@@ -180,18 +191,6 @@ class Core
                 ';
                 
                 $INDEX_CONTENT .= $IS_AJAX ? $script : '<script id="!script">'.$script.'document.getElementById("\!script").remove();</script>';
-            }
-        }
-        
-        if (!$IS_AJAX) {
-            $url = $CONTEXT_PATH . 'webcontent/main.js';
-            if (file_exists($url)) {
-                $INDEX_CONTENT .= '<script type="text/javascript" src="' . $url . '"></script>';
-            }
-            
-            $url = $CONTEXT_PATH . 'webcontent/styles.css';
-            if (file_exists($url)) {
-                $INDEX_CONTENT .= '<link rel="stylesheet" type="text/css" href="'.$url.'">';
             }
         }
         
