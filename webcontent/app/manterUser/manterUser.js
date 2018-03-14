@@ -1,9 +1,13 @@
 this.el = "#content";
 
-this.data.modal = {onCloseModal: function() {
-	if(this.user.id) {
-		this.goback();
-	} else {
-		this.user = {};
+this.data.modal = {
+	onCloseModal : function(data) {
+		if (data) {
+			if (this.user.id) {
+				this.goback();
+			} else {
+				this.user = {};
+			}
+		}
 	}
-}};
+};

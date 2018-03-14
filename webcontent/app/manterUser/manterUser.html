@@ -1,10 +1,6 @@
 <div>
-<div>
 	<label for="name">Name</label><input name="name" v-model="user.name" />
 </div>
-<div>
-	<label for="email">E-Mail</label><input name="email" v-model="user.email" />
-</div>
-<button @click="(user.id ? alterar : inserir)(user)">{{user.id ? 'Alterar' : 'Cadastrar'}}</button>
+<button @click="(user.id ? alterar : inserir)(user)">{{user.id
+	? 'Alterar' : 'Cadastrar'}}</button>
 <button @click="goback">Voltar</button>
-</div>

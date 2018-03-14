@@ -119,6 +119,7 @@ class Core
             if ($reflectionClass->hasMethod($methodName)) {
                 $reflectionMethod = $reflectionClass->getMethod($methodName);
                 
+                $resMethod = null;
                 if (isset($_REQUEST['arg0']) && $reflectionMethod->getNumberOfParameters() == 1) {
                     $data = json_decode($_REQUEST['arg0']);
                     
@@ -141,21 +142,25 @@ class Core
                         $object = $data;
                     }
                     
-                    $reflectionMethod->invoke($controller, $object);
+                    $resMethod = $reflectionMethod->invoke($controller, $object);
                 } else {
-                    $reflectionMethod->invoke($controller);
-                }
+                    $resMethod = $reflectionMethod->invoke($controller);
+                }                
                 
                 $reflectionClass = new \ReflectionClass('fw\TemplateController');
                 $propData = $reflectionClass->getProperty("_VUE_DATA");
                 $propData->setAccessible(true);
                 $data = $propData->getValue ($controller);
                 $propData->setValue($controller, new \stdClass);
+                
+                if($resMethod) {
+                    $data->ds = $resMethod;
+                }
             }
         }
         
         if ($HAS_METHOD) {
-            if(isset($data->d)) {
+            if(isset($data->d) || isset($data->m)) {
                 $INDEX_CONTENT = json_encode($data);
             }
         } else {

@@ -13,21 +13,29 @@ this.methods.selecionarTodos = function(e) {
 };
 
 this.methods.remover= function(user) {
-	this.deletar(user, function() {
-		this.users = this.users.filter(function (item) {
-		    return user.id !== item.id;
+	this.showCofirmModal("Tem certeza que deseja remover o usuário '"+user.name+"'?", function() {
+		this.deletar(user, function(data) {
+			if(data) {
+				this.users = this.users.filter(function (item) {
+				    return user.id !== item.id;
+				});
+			}
 		});
 	});
 };
 
 this.methods.deletarTodos = function() {
-	this.deletarSelecionados(this.usersCheckeds, function() {
-		var usersCheckeds = this.usersCheckeds;
-		
-		for(var i in this.usersCheckeds) {
-			Vue.delete(this.users, this.users.indexOf(this.usersCheckeds[i]));
-		}
-		
-		this.usersCheckeds = [];
+	this.showCofirmModal("Tem certeza que deseja remover todos registros selecionados?", function() {
+		this.deletarSelecionados(this.usersCheckeds, function(data) {
+			if(data) {
+				var usersCheckeds = this.usersCheckeds;
+				
+				for(var i in this.usersCheckeds) {
+					Vue.delete(this.users, this.users.indexOf(this.usersCheckeds[i]));
+				}
+				
+				this.usersCheckeds = [];
+			}
+		});
 	});
 };

@@ -5,13 +5,9 @@ use fw\TemplateController;
 
 abstract class MainController extends TemplateController
 {
-
-    protected function showModal($msg): void
+    protected function showModal($msg, $data = null): void
     {
-        $modal = new \stdClass();
-        $modal->message = $msg;
-        $modal->openned = true;
-        $this->setData('modal', $modal);
+        $this->executeMethod('showModal', $msg, $data);
     }
 }
 
