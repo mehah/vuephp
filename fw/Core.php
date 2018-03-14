@@ -33,7 +33,7 @@ class Core
             }
         }
         
-        include ('fw/VueController.php');
+        include ('fw/TemplateController.php');
         include ('fw/database/DatabaseConnection.php');
         include ('fw/database/DatabaseEntity.php');
         include ('fw/database/Entity.php');
@@ -57,14 +57,14 @@ class Core
         if (! $IS_AJAX) {
             $INDEX_CONTENT .= '<script type="text/javascript" src="' . $CONTEXT_PATH . 'fw/vue.min.js"></script>';
             
-            $url = $CONTEXT_PATH . 'webcontent/main.js';
+            $url = 'webcontent/main.js';
             if (file_exists($url)) {
-                $INDEX_CONTENT .= '<script type="text/javascript" src="' . $url . '"></script>';
+                $INDEX_CONTENT .= '<script type="text/javascript" src="' . $CONTEXT_PATH .$url . '"></script>';
             }
             
-            $url = $CONTEXT_PATH . 'webcontent/styles.css';
+            $url = 'webcontent/styles.css';
             if (file_exists($url)) {
-                $INDEX_CONTENT .= '<link rel="stylesheet" type="text/css" href="'.$url.'">';
+                $INDEX_CONTENT .= '<link rel="stylesheet" type="text/css" href="'.$CONTEXT_PATH .$url.'">';
             }
             
             $INDEX_CONTENT .= file_get_contents('webcontent/index.html');
@@ -88,8 +88,8 @@ class Core
             
             if (! $controller) {
                 $controller = new $className();
-                if(!($controller instanceof VueController)) {
-                    die('O controlador '.$className.' precisa extender a classe VueController.');
+                if(!($controller instanceof TemplateController)) {
+                    die('O controlador '.$className.' precisa extender a classe TemplateController.');
                 }
                 $_SESSION[$controllerPath] = $controller;
             }
@@ -146,7 +146,7 @@ class Core
                     $reflectionMethod->invoke($controller);
                 }
                 
-                $reflectionClass = new \ReflectionClass('fw\VueController');
+                $reflectionClass = new \ReflectionClass('fw\TemplateController');
                 $propData = $reflectionClass->getProperty("_VUE_DATA");
                 $propData->setAccessible(true);
                 $data = $propData->getValue ($controller);
@@ -187,7 +187,8 @@ class Core
                         VUE_CONTEXT[TEMP_OBJECT.el].$destroy();
                         delete VUE_CONTEXT[TEMP_OBJECT.el];
                     }
-        			VUE_CONTEXT[TEMP_OBJECT.el] = new Vue({el : TEMP_OBJECT.el, mixins: [TEMP_OBJECT, VUE_GLOBAL], created: function(){'.$executeMethods.'}});
+
+        			VUE_CONTEXT[TEMP_OBJECT.el] = new Vue({el : TEMP_OBJECT.el, mixins: [clone(VUE_GLOBAL), TEMP_OBJECT], created: function(){'.$executeMethods.'}});
                 ';
                 
                 $INDEX_CONTENT .= $IS_AJAX ? $script : '<script id="!script">'.$script.'document.getElementById("\!script").remove();</script>';

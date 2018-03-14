@@ -1,7 +1,7 @@
 <?php
 namespace fw;
 
-class VueController
+abstract class TemplateController
 {
     private $_VUE_DATA = null;
     

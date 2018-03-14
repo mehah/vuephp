@@ -1,11 +1,10 @@
 <?php
 namespace src\controller;
 
-use fw\VueController;
 use modal\User;
 use src\service\UserService;
 
-class ConsultarUserController extends VueController
+class ConsultarUserController extends MainController
 {
 
     public function init(): void

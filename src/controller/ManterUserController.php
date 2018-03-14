@@ -1,10 +1,9 @@
 <?php
 namespace src\controller;
 
-use fw\VueController;
 use modal\User;
 
-class ManterUserController extends VueController
+class ManterUserController extends MainController
 {
     public function init(int $id = null) : void
     {
@@ -16,19 +15,18 @@ class ManterUserController extends VueController
         }
         
         $this->setData('user', $user);
-        $this->setData('messageCadastro', null);
     }
 
     public function inserir(User $user) : void
-    {        
-        $user->insert();
-        
-        $this->setData('messageCadastro', 'Cadastrado com sucesso!');
+    {
+        $msg = $user->insert() ? 'Cadastrado com sucesso.' : 'Erro ao tentar cadastrar.';
+        $this->showModal($msg);
     }
 
     public function alterar(User $user) : void
     {
-        $user->update();
+        $msg = $user->update() ? 'Atualizado com sucesso.' : 'Erro ao tentar atualizar.';
+        $this->showModal($msg);
     }
 }
 
