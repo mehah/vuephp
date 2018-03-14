@@ -176,19 +176,24 @@ class Core
                         TEMP_FUNC = function() {' . file_get_contents($appURL) . '};
                         TEMP_FUNC.call(TEMP_OBJECT);
                     ') . '
+
+                    var _VUE = VUE_CONTEXT[TEMP_OBJECT.el];
                     var elementPrincipal = document.querySelector(TEMP_OBJECT.el);
-                    var content = elementPrincipal.querySelector("content");
-                    if(!content) {
-                        content = document.createElement("content");
-                        elementPrincipal.appendChild(content);
-                    }
-                    content.innerHTML = `' . addslashes(file_get_contents($templateURL)) . '`;
-                    if(VUE_CONTEXT[TEMP_OBJECT.el]) {
-                        VUE_CONTEXT[TEMP_OBJECT.el].$destroy();
+                    if(_VUE) {
+                        elementPrincipal.innerHTML = _VUE.html;
+                        _VUE.$destroy();
                         delete VUE_CONTEXT[TEMP_OBJECT.el];
+                    } else {
+                        html = elementPrincipal.innerHTML;
                     }
 
-        			VUE_CONTEXT[TEMP_OBJECT.el] = new Vue({el : TEMP_OBJECT.el, mixins: [clone(VUE_GLOBAL), TEMP_OBJECT], created: function(){'.$executeMethods.'}});
+                    var content = document.createElement("content");
+                    elementPrincipal.appendChild(content);
+
+                    content.innerHTML = `' . addslashes(file_get_contents($templateURL)) . '`;
+
+        			_VUE = VUE_CONTEXT[TEMP_OBJECT.el] = new Vue({el : TEMP_OBJECT.el, mixins: [clone(VUE_GLOBAL), TEMP_OBJECT], created: function(){'.$executeMethods.'}});
+                    _VUE.html = html;
                 ';
                 
                 $INDEX_CONTENT .= $IS_AJAX ? $script : '<script id="!script">'.$script.'document.getElementById("\!script").remove();</script>';
