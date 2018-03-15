@@ -5,6 +5,7 @@ class Core
 {
 
     public static $PROJECT_NAME;
+
     public static $PRINCIPAL_MODULE_NAME;
 
     public static function init(): void
@@ -59,12 +60,12 @@ class Core
             
             $url = 'webcontent/main.js';
             if (file_exists($url)) {
-                $INDEX_CONTENT .= '<script type="text/javascript" src="' . $CONTEXT_PATH .$url . '"></script>';
+                $INDEX_CONTENT .= '<script type="text/javascript" src="' . $CONTEXT_PATH . $url . '"></script>';
             }
             
             $url = 'webcontent/styles.css';
             if (file_exists($url)) {
-                $INDEX_CONTENT .= '<link rel="stylesheet" type="text/css" href="'.$CONTEXT_PATH .$url.'">';
+                $INDEX_CONTENT .= '<link rel="stylesheet" type="text/css" href="' . $CONTEXT_PATH . $url . '">';
             }
             
             $INDEX_CONTENT .= file_get_contents('webcontent/index.html');
@@ -74,13 +75,19 @@ class Core
         
         $methodsList = $data = '{}';
         if (file_exists($srcPath)) {
+            if (isset($_SESSION[self::$PROJECT_NAME])) {
+                $session = $_SESSION[self::$PROJECT_NAME];
+            } else {
+                $session = $_SESSION[self::$PROJECT_NAME] = Array();
+            }
+            
             $controllerPath = self::$PROJECT_NAME . '/controller/' . $TAGET_CLASS_NAME;
             $className = 'src\controller\\' . $TAGET_CLASS_NAME . 'Controller';
             
             $controller = null;
             if ($HAS_METHOD) {
-                if (isset($_SESSION[$controllerPath])) {
-                    $controller = $_SESSION[$controllerPath];
+                if (isset($session[$TAGET_CLASS_NAME])) {
+                    $controller = $session[$TAGET_CLASS_NAME];
                 }
             } else {
                 $exURL[1] = 'init';
@@ -88,10 +95,10 @@ class Core
             
             if (! $controller) {
                 $controller = new $className();
-                if(!($controller instanceof TemplateController)) {
-                    die('O controlador '.$className.' precisa extender a classe TemplateController.');
+                if (! ($controller instanceof TemplateController)) {
+                    die('O controlador ' . $className . ' precisa extender a classe TemplateController.');
                 }
-                $_SESSION[$controllerPath] = $controller;
+                $session[$TAGET_CLASS_NAME] = $controller;
             }
             
             $posMethod = count($exURL) - 1;
@@ -131,13 +138,7 @@ class Core
                         $defaults = $reflectionClass->getDefaultProperties();
                         
                         $object = new $className();
-                        
-                        foreach ($defaults as $key => $value) {
-                            if (array_key_exists($key, $data)) {
-                                $value = &$data->{$key};
-                                $object->{$key} = $value ? $value : null;
-                            }
-                        }
+                        self::setClassProps($data, $object);
                     } else {
                         $object = $data;
                     }
@@ -145,22 +146,22 @@ class Core
                     $resMethod = $reflectionMethod->invoke($controller, $object);
                 } else {
                     $resMethod = $reflectionMethod->invoke($controller);
-                }                
+                }
                 
                 $reflectionClass = new \ReflectionClass('fw\TemplateController');
                 $propData = $reflectionClass->getProperty("_VUE_DATA");
                 $propData->setAccessible(true);
-                $data = $propData->getValue ($controller);
-                $propData->setValue($controller, new \stdClass);
+                $data = $propData->getValue($controller);
+                $propData->setValue($controller, new \stdClass());
                 
-                if($resMethod) {
+                if ($resMethod) {
                     $data->ds = $resMethod;
                 }
             }
         }
         
         if ($HAS_METHOD) {
-            if(isset($data->d) || isset($data->m)) {
+            if (isset($data->d) || isset($data->m)) {
                 $INDEX_CONTENT = json_encode($data);
             }
         } else {
@@ -168,21 +169,17 @@ class Core
             $templateURL = $url . '.html';
             if (file_exists($templateURL)) {
                 $executeMethods = '';
-                if(isset($data->m)) {
+                if (isset($data->m)) {
                     foreach ($data->m as $methodName) {
-                        $executeMethods .= 'this.'.$methodName.'();';
+                        $executeMethods .= 'this.' . $methodName . '();';
                     }
                 }
                 
+                $jsonData = isset($data->d) ? json_encode($data->d) : '{}';
                 $appURL = $url . '.js';
-                $script = '
-                    var TEMP_OBJECT = {data: ' . (isset($data->d) ? json_encode($data->d) : '{}') . ', methods: ' . $methodsList . '};
-                    ' . (! file_exists($appURL) ? '' : '
-                        TEMP_FUNC = function() {' . file_get_contents($appURL) . '};
-                        TEMP_FUNC.call(TEMP_OBJECT);
-                    ') . '
-
-                    var _VUE = VUE_CONTEXT[TEMP_OBJECT.el];
+                $script = 'var TEMP_OBJECT = {data: ' . $jsonData . ', methods: ' . $methodsList . '};';
+                $script .= ! file_exists($appURL) ? '' : 'TEMP_FUNC = function() { var $data='.$jsonData.';' . file_get_contents($appURL) . '};TEMP_FUNC.call(TEMP_OBJECT);';
+                $script .= 'var _VUE = VUE_CONTEXT[TEMP_OBJECT.el];
                     var elementPrincipal = document.querySelector(TEMP_OBJECT.el);
                     if(_VUE) {
                         elementPrincipal.innerHTML = _VUE.html;
@@ -197,15 +194,32 @@ class Core
 
                     content.innerHTML = ' . json_encode(file_get_contents($templateURL)) . ';
 
-        			_VUE = VUE_CONTEXT[TEMP_OBJECT.el] = new Vue({el : TEMP_OBJECT.el, mixins: [objectAssignDeep(VUE_GLOBAL), TEMP_OBJECT], created: function(){'.$executeMethods.'}});
+        			_VUE = VUE_CONTEXT[TEMP_OBJECT.el] = new Vue({el : TEMP_OBJECT.el, mixins: [VUE_GLOBAL, TEMP_OBJECT], created: function(){' . $executeMethods . '}});
                     _VUE.html = html;
                 ';
                 
-                $INDEX_CONTENT .= $IS_AJAX ? $script : '<script id="!script">'.$script.'document.getElementById("\!script").remove();</script>';
+                $INDEX_CONTENT .= $IS_AJAX ? $script : '<script id="!script">' . $script . 'document.getElementById("\!script").remove();</script>';
             }
         }
         
         echo $INDEX_CONTENT;
+    }
+
+    private static function setClassProps($data, $object): void
+    {
+        $reflectionClass = new \ReflectionClass($object);
+        $defaults = $reflectionClass->getDefaultProperties();
+        
+        foreach ($defaults as $key => $value) {
+            if (array_key_exists($key, $data)) {
+                $value = &$data->{$key};
+                if ($_ref = $object->{$key}) {
+                    self::setClassProps($value, $_ref);
+                } else {
+                    $object->{$key} = $value ?? null;
+                }
+            }
+        }
     }
 }
 

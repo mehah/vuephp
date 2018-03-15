@@ -6,12 +6,16 @@ use PDOException;
 
 class DatabaseConnection
 {
+
     public static $host;
+
     public static $password;
+
     public static $dbName;
+
     public static $user;
 
-    public static function getInstance(): \PDO
+    public static function getInstance(): PDO
     {
         try {
             return new PDO('mysql:host=' . self::$host . ';dbname=' . self::$dbName, self::$user, self::$password);

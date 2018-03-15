@@ -2,20 +2,21 @@
 namespace src\controller;
 
 use modal\User;
+use src\service\UserService;
+use src\modal\City;
 
 class ManterUserController extends MainController
 {
 
     public function init(int $id = null): void
     {
-        $user = new User();
-        
+        $user = null;        
         if ($id) {
-            $user->id = $id;
-            $user->load();
+            $user = UserService::find($id);
         }
         
-        $this->setData('user', $user);
+        $this->setData('user', $user ? $user : new User());
+        $this->setData('citys', City::all());
     }
 
     public function inserir(User $user): void

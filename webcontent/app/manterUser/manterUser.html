@@ -1,5 +1,9 @@
-<div>
+<form ref="form">
 	<label for="name">Name</label><input name="name" v-model="user.name" />
-</div>
+	<label for="name">City</label>
+	<select name="city" v-if="user.city" v-model="user.city.id">
+		<option v-for="city in citys" v-bind:value="city.id">{{ city.name }}</option>
+	</select>
+</form>
 <button @click="(user.id ? alterar : inserir)(user)">{{user.id ? 'Alterar' : 'Cadastrar'}}</button>
 <button @click="goback">Voltar</button>
