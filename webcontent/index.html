@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"></meta>
@@ -6,38 +5,35 @@
 </head>
 <body>
 	<script type="text/x-template" id="modal-template">
-  <transition name="modal">
-    <div class="modal-mask">
-      <div class="modal-wrapper">
-        <div class="modal-container">
-
-          <div class="modal-header">
-            <slot name="header"></slot>
-          </div>
-
-          <div class="modal-body">
-            <slot name="body"></slot>
-          </div>
-
-          <div class="modal-footer">
-            <slot name="footer"></slot>
-          </div>
-        </div>
-      </div>
-    </div>
-  </transition>
+	<transition name="modal">
+	<div class="modal-mask">
+		<div class="modal-wrapper">
+			<div class="modal-container">
+				<div class="modal-header">
+					<slot name="header"></slot>
+				</div>
+				<div class="modal-body">
+					<slot name="body"></slot>
+				</div>
+				<div class="modal-footer">
+					<slot name="footer"></slot>
+				</div>
+			</div>
+		</div>
+	</div>
+	</transition>
 	</script>
 	<section id="content">
-		conteudo fixo</br>
+		conteudo fixo<br />
 		<modal v-if="modal.openned">
-			<h3 slot="header">Mensagem</h3>
-			<span slot="body">{{modal.message}}</span>
-			<div slot="footer">
-				<button class="modal-default-button" @click="closeModal">{{modal.closeButtonTxt}}</button>
-				<template v-if="modal.confirm">
-					<button class="modal-default-button" style="margin-right: 15px;" @click="confirmModal">SIM</button>
-				</template>
-			</div>
+		<h3 slot="header">Mensagem</h3>
+		<span slot="body">{{modal.message}}</span>
+		<div slot="footer">
+			<button class="modal-default-button" @click="closeModal">{{modal.closeButtonTxt}}</button>
+			<template v-if="modal.confirm">
+			<button class="modal-default-button" style="margin-right: 15px;" @click="confirmModal">SIM</button>
+			</template>
+		</div>
 		</modal>
 	</section>
 </body>

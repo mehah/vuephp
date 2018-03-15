@@ -195,9 +195,9 @@ class Core
                     var content = document.createElement("content");
                     elementPrincipal.appendChild(content);
 
-                    content.innerHTML = `' . addslashes(file_get_contents($templateURL)) . '`;
+                    content.innerHTML = ' . json_encode(file_get_contents($templateURL)) . ';
 
-        			_VUE = VUE_CONTEXT[TEMP_OBJECT.el] = new Vue({el : TEMP_OBJECT.el, mixins: [clone(VUE_GLOBAL), TEMP_OBJECT], created: function(){'.$executeMethods.'}});
+        			_VUE = VUE_CONTEXT[TEMP_OBJECT.el] = new Vue({el : TEMP_OBJECT.el, mixins: [objectAssignDeep(VUE_GLOBAL), TEMP_OBJECT], created: function(){'.$executeMethods.'}});
                     _VUE.html = html;
                 ';
                 
