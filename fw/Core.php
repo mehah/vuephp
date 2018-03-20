@@ -1,14 +1,43 @@
 <?php
 namespace fw;
 
+use http\HttpSession\HttpSession;
+
 class Core
 {
 
     public static $PROJECT_NAME;
 
     public static $PRINCIPAL_MODULE_NAME;
-    
-    private const _ARGS = array('a','b','c','d','e','f','g','h','i','j','k', 'l','m','n','o','p','q','r','s','t','u','v','w','x ','y','z');
+
+    private const _ARGS = array(
+        'a',
+        'b',
+        'c',
+        'd',
+        'e',
+        'f',
+        'g',
+        'h',
+        'i',
+        'j',
+        'k',
+        'l',
+        'm',
+        'n',
+        'o',
+        'p',
+        'q',
+        'r',
+        's',
+        't',
+        'u',
+        'v',
+        'w',
+        'x ',
+        'y',
+        'z'
+    );
 
     public static function init(): void
     {
@@ -40,6 +69,7 @@ class Core
         include ('fw/database/DatabaseConnection.php');
         include ('fw/database/DatabaseEntity.php');
         include ('fw/database/Entity.php');
+        include ('fw/http/HttpSession.php');
         include ('database.config.php');
         
         $TARGET_NAME = $exURL[0];
@@ -77,11 +107,7 @@ class Core
         
         $methodsList = $data = '{}';
         if (file_exists($srcPath)) {
-            if (isset($_SESSION[self::$PROJECT_NAME])) {
-                $session = $_SESSION[self::$PROJECT_NAME];
-            } else {
-                $session = $_SESSION[self::$PROJECT_NAME] = Array();
-            }
+            $session = self::getSession();
             
             $controllerPath = self::$PROJECT_NAME . '/controller/' . $TAGET_CLASS_NAME;
             $className = 'src\controller\\' . $TAGET_CLASS_NAME . 'Controller';
@@ -122,11 +148,11 @@ class Core
                 
                 $countParam = $method->getNumberOfParameters();
                 $args = '';
-                for($i = -1; ++$i < $countParam;) {
-                    $args .= self::_ARGS[$i].',';
+                for ($i = - 1; ++ $i < $countParam;) {
+                    $args .= self::_ARGS[$i] . ',';
                 }
                 
-                $methodsList .= $methodName . ':function('.$args.'z){this.request("' . $TARGET_NAME . '/' . $methodName . '", '.$args.'z);}';
+                $methodsList .= $methodName . ':function(' . $args . 'z){this.request("' . $TARGET_NAME . '/' . $methodName . '", ' . $args . 'z);}';
             }
             
             $methodsList = '{' . $methodsList . '}';
@@ -153,7 +179,7 @@ class Core
                             self::setClassProps($data[$i], $arg);
                             
                             array_push($list, $arg);
-                        } elseif($arg = ($data[$i] ?? null)) {
+                        } elseif ($arg = ($data[$i] ?? null)) {
                             array_push($list, $arg);
                         }
                     }
@@ -235,6 +261,19 @@ class Core
                 }
             }
         }
+    }
+
+    public static function getSession(): Array
+    {
+        if (isset($_SESSION[self::$PROJECT_NAME])) {
+            $session = $_SESSION[self::$PROJECT_NAME];
+        } else {
+            $session = $_SESSION[self::$PROJECT_NAME] = Array(
+                'INSTANCE' => new HttpSession()
+            );
+        }
+        
+        return $session;
     }
 }
 

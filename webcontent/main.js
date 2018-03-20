@@ -41,3 +41,12 @@ VUE_GLOBAL.methods.confirmModal = function() {
 		this.modal.onConfirmModal.call(this, this.modal.data);
 	}
 };
+
+VUE_GLOBAL.methods.logout = function() {
+	this.showCofirmModal("Tem certeza que deseja sair?", function() {
+		this.request('login/sair', function(data) {
+			this.redirect('home');
+		});
+	});
+};
+

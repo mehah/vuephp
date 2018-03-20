@@ -1,0 +1,11 @@
+<div>
+	<div>
+		<label for="name">Name</label>
+		<input v-model.trim="login.user" />
+	</div>
+	<div>
+		<label for="name">Password </label>
+		<input v-model="login.password" />
+	</div>
+</div>
+<button @click="entrar(login)">Entrar</button>

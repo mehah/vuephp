@@ -1,6 +1,8 @@
 <?php
 namespace fw;
 
+use http\HttpSession\HttpSession;
+
 abstract class TemplateController
 {
 
@@ -48,6 +50,16 @@ abstract class TemplateController
     protected function goback()
     {
         $this->executeMethod("goback");
+    }
+    
+    protected function redirect($path)
+    {
+        $this->executeMethod("redirect", $path);
+    }
+    
+    protected function getSession(): HttpSession
+    {
+        return $_SESSION[Core::$PROJECT_NAME]['INSTANCE'];
     }
 }
 

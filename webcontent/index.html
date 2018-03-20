@@ -28,8 +28,10 @@
 		<nav id="menu">
 			<ul>
 				<li><a href="#" v-goto:home>Principal</a></li>
-				<li><a href="#" v-goto:consultarUser>Consultar Usuário</a></li>
-				<li><a href="#" v-goto:manterUser>Cadastrar Usuário</a></li>
+				<li><a href="#" v-goto:consultarUser v-if="logged">Consultar Usuário</a></li>
+				<li><a href="#" v-goto:manterUser v-if="logged">Cadastrar Usuário</a></li>
+				<li><a href="#" v-goto:login v-if="!logged">Login</a></li>
+				<li><a href="#" v-if="logged" @click="logout">Sair</a></li>
 			</ul>
 		</nav>
 		<modal v-if="modal.openned">

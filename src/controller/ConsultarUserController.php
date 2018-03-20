@@ -9,6 +9,8 @@ class ConsultarUserController extends MainController
 
     public function init(): void
     {
+        parent::init();
+        
         $this->setData('users', User::all());
     }
 

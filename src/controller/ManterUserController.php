@@ -10,7 +10,9 @@ class ManterUserController extends MainController
 
     public function init(int $id = null): void
     {
-        $user = null;        
+        parent::init();
+        
+        $user = null;
         if ($id) {
             $user = UserService::find($id);
         }
@@ -21,13 +23,23 @@ class ManterUserController extends MainController
 
     public function inserir(User $user): void
     {
-        $msg = ($res = $user->insert()) ? 'Cadastrado com sucesso.' : 'Erro ao tentar cadastrar.';
+        $res = false;
+        if (! $user->name) {
+            $msg = 'O campo nome é obrigatório';
+        } else {
+            $msg = ($res = $user->insert()) ? 'Cadastrado com sucesso.' : 'Erro ao tentar cadastrar.';
+        }
         $this->showModal($msg, $res);
     }
 
     public function alterar(User $user): void
     {
-        $msg = ($res = $user->update()) ? 'Atualizado com sucesso.' : 'Erro ao tentar atualizar.';
+        $res = false;
+        if (! $user->name) {
+            $msg = 'O campo nome é obrigatório';
+        } else {
+            $msg = ($res = $user->update()) ? 'Atualizado com sucesso.' : 'Erro ao tentar atualizar.';
+        }
         $this->showModal($msg, $res);
     }
 }
