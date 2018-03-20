@@ -23,8 +23,15 @@
 	</div>
 	</transition>
 	</script>
-	<section id="content">
-		conteudo fixo<br />
+	<div id="app">
+		<header> EXEMPLO DE ARQUITETURA </header>
+		<nav id="menu">
+			<ul>
+				<li><a href="#" v-goto:home>Principal</a></li>
+				<li><a href="#" v-goto:consultarUser>Consultar Usuário</a></li>
+				<li><a href="#" v-goto:manterUser>Cadastrar Usuário</a></li>
+			</ul>
+		</nav>
 		<modal v-if="modal.openned">
 		<h3 slot="header">Mensagem</h3>
 		<span slot="body">{{modal.message}}</span>
@@ -35,6 +42,6 @@
 			</template>
 		</div>
 		</modal>
-	</section>
+	</div>
 </body>
 </html>

@@ -1,4 +1,4 @@
-this.el = "#content";
+this.el = "#app";
 
 this.data.usersCheckeds = [];
 
