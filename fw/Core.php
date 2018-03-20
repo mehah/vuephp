@@ -7,6 +7,8 @@ class Core
     public static $PROJECT_NAME;
 
     public static $PRINCIPAL_MODULE_NAME;
+    
+    private const _ARGS = array('a','b','c','d','e','f','g','h','i','j','k', 'l','m','n','o','p','q','r','s','t','u','v','w','x ','y','z');
 
     public static function init(): void
     {
@@ -29,7 +31,7 @@ class Core
                 if (! $isNumeric) {
                     die();
                 } else {
-                    $_REQUEST['arg0'] = $exURL[1];
+                    $_REQUEST['arg0'] = '[' . $exURL[1] . ']';
                 }
             }
         }
@@ -118,7 +120,13 @@ class Core
                     $methodsList .= ',';
                 }
                 
-                $methodsList .= $methodName . ':function(p, c){this.request("' . $TARGET_NAME . '/' . $methodName . '", p, c);}';
+                $countParam = $method->getNumberOfParameters();
+                $args = '';
+                for($i = -1; ++$i < $countParam;) {
+                    $args .= self::_ARGS[$i].',';
+                }
+                
+                $methodsList .= $methodName . ':function('.$args.'z){this.request("' . $TARGET_NAME . '/' . $methodName . '", '.$args.'z);}';
             }
             
             $methodsList = '{' . $methodsList . '}';
@@ -127,23 +135,30 @@ class Core
                 $reflectionMethod = $reflectionClass->getMethod($methodName);
                 
                 $resMethod = null;
-                if (isset($_REQUEST['arg0']) && $reflectionMethod->getNumberOfParameters() == 1) {
+                if (isset($_REQUEST['arg0'])) {
                     $data = json_decode($_REQUEST['arg0']);
                     
-                    $classType = $reflectionMethod->getParameters()[0]->getType();
+                    $params = $reflectionMethod->getParameters();
                     
-                    if (! $classType->isBuiltin()) {
-                        $className = $classType->getName();
-                        $reflectionClass = new \ReflectionClass($className);
-                        $defaults = $reflectionClass->getDefaultProperties();
+                    $list = Array();
+                    for ($i = - 1, $s = count($params); ++ $i < $s;) {
+                        $classType = $params[$i]->getType();
                         
-                        $object = new $className();
-                        self::setClassProps($data, $object);
-                    } else {
-                        $object = $data;
+                        if ($classType && ! $classType->isBuiltin()) {
+                            $className = $classType->getName();
+                            $reflectionClass = new \ReflectionClass($className);
+                            $defaults = $reflectionClass->getDefaultProperties();
+                            
+                            $arg = new $className();
+                            self::setClassProps($data[$i], $arg);
+                            
+                            array_push($list, $arg);
+                        } elseif($arg = ($data[$i] ?? null)) {
+                            array_push($list, $arg);
+                        }
                     }
                     
-                    $resMethod = $reflectionMethod->invoke($controller, $object);
+                    $resMethod = $reflectionMethod->invokeArgs($controller, $list);
                 } else {
                     $resMethod = $reflectionMethod->invoke($controller);
                 }
@@ -178,7 +193,7 @@ class Core
                 $jsonData = isset($data->d) ? json_encode($data->d) : '{}';
                 $appURL = $url . '.js';
                 $script = 'var TEMP_OBJECT = {data: ' . $jsonData . ', methods: ' . $methodsList . '};';
-                $script .= ! file_exists($appURL) ? '' : 'TEMP_FUNC = function() { var $data='.$jsonData.';' . file_get_contents($appURL) . '};TEMP_FUNC.call(TEMP_OBJECT);';
+                $script .= ! file_exists($appURL) ? '' : 'TEMP_FUNC = function() { var $data=' . $jsonData . ';' . file_get_contents($appURL) . '};TEMP_FUNC.call(TEMP_OBJECT);';
                 $script .= 'var _VUE = VUE_CONTEXT[TEMP_OBJECT.el];
                     var elementPrincipal = document.querySelector(TEMP_OBJECT.el);
                     if(_VUE) {

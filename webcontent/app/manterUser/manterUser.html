@@ -1,9 +1,18 @@
-<form ref="form">
-	<label for="name">Name</label><input name="name" v-model="user.name" />
-	<label for="name">City</label>
-	<select name="city" v-if="user.city" v-model="user.city.id">
-		<option v-for="city in citys" v-bind:value="city.id">{{ city.name }}</option>
-	</select>
-</form>
+<div>
+	<div>
+		<label for="name">Name</label>
+		<input v-model.trim="user.name" />
+	</div>
+	<div>
+		<label for="name">Sex </label>
+		<input type="radio" :value="0" v-model="user.sex" /> Female <input type="radio" :value="1" v-model="user.sex" /> Masculine
+	</div>
+	<div>
+		<label for="name">City</label>
+		<select name="city" v-model="user.city.id">
+			<option v-for="city in citys" v-bind:value="city.id">{{ city.name }}</option>
+		</select>
+	</div>
+</div>
 <button @click="(user.id ? alterar : inserir)(user)">{{user.id ? 'Alterar' : 'Cadastrar'}}</button>
 <button @click="goback">Voltar</button>

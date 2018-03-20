@@ -20,6 +20,7 @@ class UserDAO
             
             $entity->id = $res['u.id'];
             $entity->name = $res['u.name'];
+            $entity->sex = $res['u.sex'];
             
             $entity->city->id = $res['c.id'];
             $entity->city->name = $res['c.name'];

@@ -25,6 +25,8 @@ class User extends Entity
     public $name;
 
     public $email;
+    
+    public $sex;
 
     public $city;
 }

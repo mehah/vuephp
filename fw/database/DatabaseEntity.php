@@ -185,8 +185,7 @@ class DatabaseEntity
         $tableName = $class->getProperty("table")->getValue();
         $primaryKey = $class->getProperty("primaryKey")->getValue();
         
-        $stmt = $conn->query('DELETE FROM `' . $tableName . '` WHERE `' . $primaryKey . '` = ' . $class->getProperty($primaryKey)
-            ->getValue($entity));
+        $stmt = $conn->query('DELETE FROM `' . $tableName . '` WHERE `' . $primaryKey . '` = ' . $class->getProperty($primaryKey)->getValue($entity));
         
         return $stmt->execute();
     }
