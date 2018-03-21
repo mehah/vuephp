@@ -6,7 +6,7 @@ this.data.modal = {
 			if (this.user.id) {
 				this.goback();
 			} else {
-				this.user = $data.user;
+				this.user = JSON.parse(JSON.stringify($data.user));
 			}
 		}
 	}

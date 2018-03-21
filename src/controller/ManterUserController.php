@@ -2,7 +2,6 @@
 namespace src\controller;
 
 use modal\User;
-use src\service\UserService;
 use src\modal\City;
 
 class ManterUserController extends MainController
@@ -14,10 +13,10 @@ class ManterUserController extends MainController
         
         $user = null;
         if ($id) {
-            $user = UserService::find($id);
+            $user = User::find($id);
         }
         
-        $this->setData('user', $user ? $user : new User());
+        $this->setData('user', $user ?? new User());
         $this->setData('citys', City::all());
     }
 

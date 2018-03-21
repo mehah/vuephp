@@ -41,19 +41,36 @@ class DatabaseEntity
     public static function load(Entity $entity): bool
     {
         $conn = DatabaseConnection::getInstance();
+        $conn->setAttribute(\PDO::ATTR_FETCH_TABLE_NAMES, true);
         
         $class = new \ReflectionClass($entity);
         
         $tableName = $class->getProperty("table")->getValue();
         $primaryKey = $class->getProperty("primaryKey")->getValue();
         
-        $stmt = $conn->query('SELECT * FROM `' . $tableName . '` WHERE `' . $primaryKey . '` = ' . $class->getProperty($primaryKey)
+        $relationship = $class->getProperty("relationship");
+        if ($relationship) {
+            $relationship = $relationship->getValue();
+        }
+        
+        $relString = '';
+        foreach ($relationship as $propName => $fieldName) {
+            $rel = $class->getProperty($propName)->getValue($entity);
+            $classRel = new \ReflectionClass($rel);
+            
+            $tableNameRel = $classRel->getProperty("table")->getValue();
+            $primaryKeyRel = $classRel->getProperty("primaryKey")->getValue();
+            
+            $relString .= ' LEFT JOIN ' . $tableNameRel . ' ON ' . $tableName . '.' . $fieldName . '=' . $tableNameRel . '.' . $primaryKeyRel;
+        }
+        
+        $stmt = $conn->query('SELECT * FROM `' . $tableName . '`' . $relString . ' WHERE ' . $tableName . '.' . $primaryKey . ' = ' . $class->getProperty($primaryKey)
             ->getValue($entity));
         
         $res = $stmt->execute();
         
         if ($res) {
-            $entityDB = $stmt->fetchObject($class->getName());
+            $entityDB = $stmt->fetch(\PDO::FETCH_ASSOC);
             
             $props = $class->getProperties();
             foreach ($props as $prop) {
@@ -61,7 +78,25 @@ class DatabaseEntity
                 if ($prop->isStatic() || $name == 'class') {
                     continue;
                 }
-                $entity->{$name} = $prop->getValue($entityDB);
+                
+                if ($rel = $relationship[$name] ?? null) {
+                    $entityRel = $entity->{$name};
+                    
+                    $classRel = new \ReflectionClass($entityRel);
+                    $tableNameRel = $classRel->getProperty("table")->getValue();
+                    
+                    $propsRel = $classRel->getProperties();
+                    foreach ($propsRel as $propRel) {
+                        $nameRel = $propRel->getName();
+                        if ($propRel->isStatic() || $nameRel == 'class') {
+                            continue;
+                        }
+                        
+                        $entityRel->{$nameRel} = $entityDB[$tableNameRel.'.'.$nameRel];
+                    }
+                } else {
+                    $entity->{$name} = $entityDB[$tableName.'.'.$name];
+                }
             }
             
             return $res;
@@ -185,7 +220,8 @@ class DatabaseEntity
         $tableName = $class->getProperty("table")->getValue();
         $primaryKey = $class->getProperty("primaryKey")->getValue();
         
-        $stmt = $conn->query('DELETE FROM `' . $tableName . '` WHERE `' . $primaryKey . '` = ' . $class->getProperty($primaryKey)->getValue($entity));
+        $stmt = $conn->query('DELETE FROM `' . $tableName . '` WHERE `' . $primaryKey . '` = ' . $class->getProperty($primaryKey)
+            ->getValue($entity));
         
         return $stmt->execute();
     }

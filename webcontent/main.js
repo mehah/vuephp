@@ -1,15 +1,13 @@
 // register modal component
 Vue.component('modal', {
-  template: '#modal-template'
+	template : '#modal-template'
 });
 
 VUE_GLOBAL.data.modal = {
-		openned: false,
-		confirm: false,
-		message: null,
-		closeButtonTxt: 'close',
-		/*onCloseModal: null,
-		onConfirmModal: null*/
+	openned : false,
+	confirm : false,
+	message : null,
+	closeButtonTxt : 'close',
 }
 
 VUE_GLOBAL.methods.showModal = function(message, data) {
@@ -30,14 +28,14 @@ VUE_GLOBAL.methods.showCofirmModal = function(message, onConfirm, data) {
 
 VUE_GLOBAL.methods.closeModal = function() {
 	this.modal.openned = false;
-	if(this.modal.onCloseModal) {
+	if (this.modal.onCloseModal) {
 		this.modal.onCloseModal.call(this, this.modal.data);
 	}
 };
 
 VUE_GLOBAL.methods.confirmModal = function() {
 	this.modal.openned = false;
-	if(this.modal.onConfirmModal) {
+	if (this.modal.onConfirmModal) {
 		this.modal.onConfirmModal.call(this, this.modal.data);
 	}
 };
@@ -49,4 +47,3 @@ VUE_GLOBAL.methods.logout = function() {
 		});
 	});
 };
-

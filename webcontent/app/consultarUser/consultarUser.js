@@ -25,6 +25,11 @@ this.methods.remover= function(user) {
 };
 
 this.methods.deletarTodos = function() {
+	if(this.usersCheckeds.length === 0) {
+		this.showModal('Selecione pelo menos um usuário.');
+		return;
+	}
+	
 	this.showCofirmModal("Tem certeza que deseja remover todos registros selecionados?", function() {
 		this.deletarSelecionados(this.usersCheckeds, function(data) {
 			if(data) {
