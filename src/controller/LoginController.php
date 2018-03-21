@@ -5,14 +5,16 @@ use src\modal\Login;
 
 class LoginController extends MainController
 {
+
     public function init(): void
     {
         parent::init();
-        $this->setData('login', new Login);
+        $this->setData('login', new Login());
     }
-    
-    public function entrar(Login $login) : void {
-        if(!($login->user === "admin" && $login->password === "teste")) {
+
+    public function entrar(Login $login): void
+    {
+        if (! ($login->user === "admin" && $login->password === "teste")) {
             $this->showModal('Usuário ou senha invalido(s).');
             return;
         }
@@ -21,8 +23,9 @@ class LoginController extends MainController
         $this->setData('logged', true);
         $this->redirect('home');
     }
-    
-    public function sair() {
+
+    public function sair()
+    {
         $this->getSession()->destroy();
     }
 }

@@ -5,8 +5,9 @@ use fw\TemplateController;
 
 abstract class MainController extends TemplateController
 {
+
     protected $login;
-    
+
     protected function init(): void
     {
         $this->login = $this->getSession()->getAttribute('login');

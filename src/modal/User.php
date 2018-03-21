@@ -17,7 +17,7 @@ class User extends Entity
 
     function __construct()
     {
-        $this->city = new City;
+        $this->city = new City();
     }
 
     public $id;
@@ -25,7 +25,7 @@ class User extends Entity
     public $name;
 
     public $email;
-    
+
     public $sex;
 
     public $city;

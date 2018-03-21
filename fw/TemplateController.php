@@ -51,12 +51,12 @@ abstract class TemplateController
     {
         $this->executeMethod("goback");
     }
-    
+
     protected function redirect($path)
     {
         $this->executeMethod("redirect", $path);
     }
-    
+
     protected function getSession(): HttpSession
     {
         return $_SESSION[Core::$PROJECT_NAME]['INSTANCE'];

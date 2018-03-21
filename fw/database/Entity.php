@@ -2,7 +2,8 @@
 namespace fw\database;
 
 abstract class Entity
-{    
+{
+
     public function load(): bool
     {
         return DatabaseEntity::load($this);
@@ -27,7 +28,7 @@ abstract class Entity
     {
         return DatabaseEntity::find(get_called_class(), $id);
     }
-    
+
     public static function all(): Array
     {
         return DatabaseEntity::all(get_called_class());

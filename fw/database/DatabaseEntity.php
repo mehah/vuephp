@@ -92,10 +92,10 @@ class DatabaseEntity
                             continue;
                         }
                         
-                        $entityRel->{$nameRel} = $entityDB[$tableNameRel.'.'.$nameRel];
+                        $entityRel->{$nameRel} = $entityDB[$tableNameRel . '.' . $nameRel];
                     }
                 } else {
-                    $entity->{$name} = $entityDB[$tableName.'.'.$name];
+                    $entity->{$name} = $entityDB[$tableName . '.' . $name];
                 }
             }
             
