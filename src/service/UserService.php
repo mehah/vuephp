@@ -20,4 +20,3 @@ class UserService
         return UserDAO::deletarUsuariosPorId($ids);
     }
 }
-
