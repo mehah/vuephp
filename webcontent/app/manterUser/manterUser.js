@@ -6,7 +6,7 @@ this.data.modal = {
 			if (this.user.id) {
 				this.goback();
 			} else {
-				this.user = JSON.parse(JSON.stringify($data.user));
+				Vue.util.clear(this.user);
 			}
 		}
 	}

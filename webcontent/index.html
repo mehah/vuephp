@@ -31,9 +31,11 @@
 				<li><a href="#" v-goto:consultarUser v-if="logged">Consultar Usuário</a></li>
 				<li><a href="#" v-goto:manterUser v-if="logged">Cadastrar Usuário</a></li>
 				<li><a href="#" v-goto:login v-if="!logged">Login</a></li>
+				<li><a href="#" v-goto:manterCidade v-if="logged">Cadastrar Cidade</a></li>
 				<li><a href="#" v-if="logged" @click.prevent="logout">Sair</a></li>
 			</ul>
 		</nav>
+		<app-content></app-content>
 		<modal v-if="modal.openned">
 		<h3 slot="header">Mensagem</h3>
 		<span slot="body">{{modal.message}}</span>

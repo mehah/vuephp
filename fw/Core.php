@@ -138,7 +138,7 @@ class Core
             $methods = $reflectionClass->getMethods(\ReflectionMethod::IS_PUBLIC);
             foreach ($methods as $method) {
                 $methodName = $method->getName();
-                if ($method->isStatic() || $methodName == 'init') {
+                if ($method->isStatic() || $methodName == 'init' || $methodName == '__construct') {
                     continue;
                 }
                 
@@ -218,27 +218,8 @@ class Core
                 
                 $jsonData = isset($data->d) ? json_encode($data->d) : '{}';
                 $appURL = $url . '.js';
-                $script = 'var TEMP_OBJECT = {data: ' . $jsonData . ', methods: ' . $methodsList . '};';
-                $script .= ! file_exists($appURL) ? '' : 'TEMP_FUNC = function() { var $data=' . $jsonData . ';' . file_get_contents($appURL) . '};TEMP_FUNC.call(TEMP_OBJECT);';
-                $script .= 'var _VUE = VUE_CONTEXT[TEMP_OBJECT.el];
-                    var elementPrincipal = document.querySelector(TEMP_OBJECT.el);
-                    if(_VUE) {
-                        elementPrincipal.innerHTML = _VUE.html;
-                        _VUE.$destroy();
-                        delete VUE_CONTEXT[TEMP_OBJECT.el];
-                    } else {
-                        html = elementPrincipal.innerHTML;
-                    }
-
-                    var content = document.createElement("content");
-                    elementPrincipal.appendChild(content);
-
-                    content.innerHTML = ' . json_encode(file_get_contents($templateURL)) . ';
-
-        			_VUE = VUE_CONTEXT[TEMP_OBJECT.el] = new Vue({el : TEMP_OBJECT.el, mixins: [VUE_GLOBAL, TEMP_OBJECT], created: function(){' . $executeMethods . '}});
-                    _VUE.html = html;
-                ';
-                
+                $script = 'processAppTemplate(' . json_encode(file_get_contents($templateURL)) . ', '.$jsonData.', '.
+                    $methodsList.', ' . (file_exists($appURL) ? 'function() {'.file_get_contents($appURL).'}' : 'null') . ', function(){'.$executeMethods.'});';
                 $INDEX_CONTENT .= $IS_AJAX ? $script : '<script id="!script">' . $script . 'document.getElementById("\!script").remove();</script>';
             }
         }
