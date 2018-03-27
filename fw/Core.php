@@ -218,7 +218,7 @@ class Core
                 
                 $jsonData = isset($data->d) ? json_encode($data->d) : '{}';
                 $appURL = $url . '.js';
-                $script = 'processAppTemplate(' . json_encode(file_get_contents($templateURL)) . ', '.$jsonData.', '.
+                $script = 'processAppTemplate("'.$TARGET_NAME.'",' . json_encode(file_get_contents($templateURL)) . ', '.$jsonData.', '.
                     $methodsList.', ' . (file_exists($appURL) ? 'function() {'.file_get_contents($appURL).'}' : 'null') . ', function(){'.$executeMethods.'});';
                 $INDEX_CONTENT .= $IS_AJAX ? $script : '<script id="!script">' . $script . 'document.getElementById("\!script").remove();</script>';
             }
