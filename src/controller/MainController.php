@@ -13,10 +13,10 @@ abstract class MainController extends TemplateController
         $this->login = $this->getSession()->getAttribute('login');
         $this->setData('logged', $this->login ? true : false);
     }
-
-    protected function showModal($msg, $data = null): void
+    
+    public function logout()
     {
-        $this->executeMethod('showModal', $msg, $data);
+        $this->getSession()->destroy();
     }
 }
 

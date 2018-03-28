@@ -25,36 +25,9 @@ abstract class TemplateController
         return $o;
     }
 
-    private function getMethods(): \stdClass
-    {
-        $o = null;
-        if (isset($this->_VUE_DATA->m)) {
-            $o = $this->_VUE_DATA->m;
-        } else {
-            $o = $this->_VUE_DATA->m = new \stdClass();
-        }
-        
-        return $o;
-    }
-
     protected function setData($name, $value): void
     {
         $this->getData()->{$name} = $value;
-    }
-
-    protected function executeMethod(string $name, ...$args): void
-    {
-        $this->getMethods()->{$name} = $args;
-    }
-
-    protected function goback()
-    {
-        $this->executeMethod("goback");
-    }
-
-    protected function redirect($path)
-    {
-        $this->executeMethod("redirect", $path);
     }
 
     protected function getSession(): HttpSession

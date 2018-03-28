@@ -1,4 +1,4 @@
-this.el = "#app";
+App("#app");
 
 this.data.usersCheckeds = [];
 
@@ -13,9 +13,11 @@ this.methods.selecionarTodos = function(e) {
 };
 
 this.methods.remover= function(user) {
-	this.showCofirmModal("Tem certeza que deseja remover o usuário '"+user.name+"'?", function() {
-		this.deletar(user, function(data) {
-			if(data) {
+	var currentApp = this;
+	Modal.messageConfirm("Tem certeza que deseja remover o usuário '"+user.name+"'?", function() {
+		currentApp.$deletar(user, function(data) {
+			Modal.message(data[1]);
+			if(data[0]) {
 				this.users = this.users.filter(function (item) {
 				    return user.id !== item.id;
 				});
@@ -26,13 +28,15 @@ this.methods.remover= function(user) {
 
 this.methods.deletarTodos = function() {
 	if(this.usersCheckeds.length === 0) {
-		this.showModal('Selecione pelo menos um usuário.');
+		Modal.message('Selecione pelo menos um usuário.');
 		return;
 	}
 	
-	this.showCofirmModal("Tem certeza que deseja remover todos registros selecionados?", function() {
-		this.deletarSelecionados(this.usersCheckeds, function(data) {
-			if(data) {
+	var currentApp = this;
+	Modal.messageConfirm("Tem certeza que deseja remover todos registros selecionados?", function() {
+		currentApp.$deletarSelecionados(currentApp.usersCheckeds, function(data) {
+			Modal.message(data[1]);
+			if(data[0]) {
 				var usersCheckeds = this.usersCheckeds;
 				
 				for(var i in this.usersCheckeds) {

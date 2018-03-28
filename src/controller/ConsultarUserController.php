@@ -14,20 +14,18 @@ class ConsultarUserController extends MainController
         $this->setData('users', User::all());
     }
 
-    public function deletar(User $user): bool
+    public function deletar(User $user): Array
     {
         $msg = ($res = $user->delete()) ? 'Usuário \'' . $user->name . '\' removido com sucesso.' : 'Erro ao tentar remover o usuário \'' . $user->name . '\'.';
-        $this->showModal($msg);
         
-        return $res;
+        return Array($res, $msg);
     }
 
-    public function deletarSelecionados(Array $users): bool
+    public function deletarSelecionados(Array $users): Array
     {
         $msg = ($res = UserService::deletarUsuarios($users)) ? 'Usuários selecionados foram removido com sucesso.' : 'Erro ao tentar remover todos os usuários.';
-        $this->showModal($msg);
         
-        return $res;
+        return Array($res, $msg);
     }
 }
 

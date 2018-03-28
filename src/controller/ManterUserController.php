@@ -20,7 +20,7 @@ class ManterUserController extends MainController
         $this->setData('citys', City::all());
     }
 
-    public function inserir(User $user): void
+    public function inserir(User $user): Array
     {
         $res = false;
         if (! $user->name) {
@@ -28,10 +28,14 @@ class ManterUserController extends MainController
         } else {
             $msg = ($res = $user->insert()) ? 'Cadastrado com sucesso.' : 'Erro ao tentar cadastrar.';
         }
-        $this->showModal($msg, $res);
+        
+        return Array(
+            $res,
+            $msg
+        );
     }
 
-    public function alterar(User $user): void
+    public function alterar(User $user): Array
     {
         $res = false;
         if (! $user->name) {
@@ -39,7 +43,11 @@ class ManterUserController extends MainController
         } else {
             $msg = ($res = $user->update()) ? 'Atualizado com sucesso.' : 'Erro ao tentar atualizar.';
         }
-        $this->showModal($msg, $res);
+        
+        return Array(
+            $res,
+            $msg
+        );
     }
 }
 

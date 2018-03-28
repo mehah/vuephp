@@ -84,6 +84,8 @@ class Core
         
         session_start();
         
+        $APP_CACHED = ($_REQUEST['cached'] ?? false) === 'true'? true: false;
+        
         $INDEX_CONTENT = '';
         $IS_AJAX = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && ! empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
         
@@ -135,27 +137,29 @@ class Core
             
             $methodsList = '';
             
-            $methods = $reflectionClass->getMethods(\ReflectionMethod::IS_PUBLIC);
-            foreach ($methods as $method) {
-                $methodName = $method->getName();
-                if ($method->isStatic() || $methodName == 'init' || $methodName == '__construct') {
-                    continue;
+            if (! $APP_CACHED) {
+                $methods = $reflectionClass->getMethods(\ReflectionMethod::IS_PUBLIC);
+                foreach ($methods as $method) {
+                    $methodName = $method->getName();
+                    if ($method->isStatic() || $methodName == 'init' || $methodName == '__construct') {
+                        continue;
+                    }
+                    
+                    if ($methodsList) {
+                        $methodsList .= ',';
+                    }
+                    
+                    $countParam = $method->getNumberOfParameters();
+                    $args = '';
+                    for ($i = - 1; ++ $i < $countParam;) {
+                        $args .= self::_ARGS[$i] . ',';
+                    }
+                    
+                    $methodsList .= '$' . $methodName . ':function(' . $args . 'z){this.request("' . $TARGET_NAME . '/' . $methodName . '", ' . $args . 'z);}';
                 }
-                
-                if ($methodsList) {
-                    $methodsList .= ',';
-                }
-                
-                $countParam = $method->getNumberOfParameters();
-                $args = '';
-                for ($i = - 1; ++ $i < $countParam;) {
-                    $args .= self::_ARGS[$i] . ',';
-                }
-                
-                $methodsList .= $methodName . ':function(' . $args . 'z){this.request("' . $TARGET_NAME . '/' . $methodName . '", ' . $args . 'z);}';
+                $methodsList = '{' . $methodsList . '}';
             }
             
-            $methodsList = '{' . $methodsList . '}';
             $methodName = $exURL[$posMethod];
             if ($reflectionClass->hasMethod($methodName)) {
                 $reflectionMethod = $reflectionClass->getMethod($methodName);
@@ -202,26 +206,24 @@ class Core
         }
         
         if ($HAS_METHOD) {
-            if (isset($data->d) || isset($data->m)) {
+            if (isset($data->d) || isset($data->ds)) {
                 $INDEX_CONTENT = json_encode($data);
             }
         } else {
-            $url = 'webcontent/app/' . $TARGET_NAME . '/' . $TARGET_NAME;
-            $templateURL = $url . '.html';
-            if (file_exists($templateURL)) {
-                $executeMethods = '';
-                if (isset($data->m)) {
-                    foreach ($data->m as $methodName) {
-                        $executeMethods .= 'this.' . $methodName . '();';
-                    }
+            $script = '';
+            if ($APP_CACHED) {
+                $script = 'processAppTemplate("' . $TARGET_NAME . '", null, ' . (isset($data->d) ? json_encode($data->d) : '{}') . ');';
+            } else {
+                $url = 'webcontent/app/' . $TARGET_NAME . '/' . $TARGET_NAME;
+                $templateURL = $url . '.html';
+                if (file_exists($templateURL)) {
+                    $jsonData = isset($data->d) ? json_encode($data->d) : '{}';
+                    $appURL = $url . '.js';
+                    $script = 'processAppTemplate("' . $TARGET_NAME . '",' . json_encode(file_get_contents($templateURL)) . ', ' . $jsonData . ', ' . $methodsList . ', ' . (file_exists($appURL) ? 'function(App) {' . file_get_contents($appURL) . '}' : 'null') . ');';
                 }
-                
-                $jsonData = isset($data->d) ? json_encode($data->d) : '{}';
-                $appURL = $url . '.js';
-                $script = 'processAppTemplate("'.$TARGET_NAME.'",' . json_encode(file_get_contents($templateURL)) . ', '.$jsonData.', '.
-                    $methodsList.', ' . (file_exists($appURL) ? 'function() {'.file_get_contents($appURL).'}' : 'null') . ', function(){'.$executeMethods.'});';
-                $INDEX_CONTENT .= $IS_AJAX ? $script : '<script id="!script">' . $script . 'document.getElementById("\!script").remove();</script>';
             }
+            
+            $INDEX_CONTENT .= $IS_AJAX ? $script : '<script id="!script">' . $script . 'document.getElementById("\!script").remove();</script>';
         }
         
         echo $INDEX_CONTENT;

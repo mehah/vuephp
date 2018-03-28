@@ -1,49 +1,62 @@
-// register modal component
-Vue.component('modal', {
-	template : '#modal-template'
+var Modal;
+document.addEventListener("DOMContentLoaded", function() {
+	Modal = new Vue({
+		el : '#modal',
+		components : {
+			'modal' : {
+				template : '#modal-template'
+			}
+		},
+		data : {
+			openned : false,
+			isConfirm : false,
+			msg : null,
+			closeButtonTxt : 'close',
+			onClose : null,
+			onConfirm : null
+		},
+		methods : {
+			message : function(msg, onClose) {
+				this.openned = true;
+				this.isConfirm = false;
+				this.closeButtonTxt = 'OK';
+				this.msg = msg;
+				this.onClose = onClose || null;
+			},
+			messageConfirm : function(msg, onConfirm, onClose) {
+				this.openned = true;
+				this.isConfirm = true;
+				this.closeButtonTxt = 'NÃO';
+				this.msg = msg;
+				this.onConfirm = onConfirm || null;
+				this.onClose = onClose || null;
+			},
+			close : function() {
+				this.openned = false;
+				if (this.onClose) {
+					this.onClose.call(this);
+				}
+			},
+			confirm : function() {
+				this.openned = false;
+				if (this.onConfirm) {
+					this.onConfirm.call(this);
+				}
+			}
+		}
+	});
 });
 
-VUE_GLOBAL.data.modal = {
-	openned : false,
-	confirm : false,
-	message : null,
-	closeButtonTxt : 'close',
-}
-
-VUE_GLOBAL.methods.showModal = function(message, data) {
-	this.modal.openned = true;
-	this.modal.confirm = false;
-	this.modal.closeButtonTxt = 'OK';
-	this.modal.message = message;
-	this.modal.data = data || null;
-};
-
-VUE_GLOBAL.methods.showCofirmModal = function(message, onConfirm, data) {
-	this.showModal(message);
-	this.modal.confirm = true;
-	this.modal.closeButtonTxt = 'NÃO';
-	this.modal.onConfirmModal = onConfirm || null;
-	this.modal.data = data || null;
-};
-
-VUE_GLOBAL.methods.closeModal = function() {
-	this.modal.openned = false;
-	if (this.modal.onCloseModal) {
-		this.modal.onCloseModal.call(this, this.modal.data);
+Vue.mixin({
+	methods : {
+		logout : function() {
+			var currentApp = this.$children[0];
+			Modal.messageConfirm("Tem certeza que deseja sair?", function() {
+				currentApp.$logout(function() {
+					this.logged = false;
+					this.redirect('home');
+				});
+			});
+		}
 	}
-};
-
-VUE_GLOBAL.methods.confirmModal = function() {
-	this.modal.openned = false;
-	if (this.modal.onConfirmModal) {
-		this.modal.onConfirmModal.call(this, this.modal.data);
-	}
-};
-
-VUE_GLOBAL.methods.logout = function() {
-	this.showCofirmModal("Tem certeza que deseja sair?", function() {
-		this.request('login/sair', function(data) {
-			this.redirect('home');
-		});
-	});
-};
+});

@@ -35,16 +35,18 @@
 				<li><a href="#" v-if="logged" @click.prevent="logout">Sair</a></li>
 			</ul>
 		</nav>
-		<app-content></app-content>
-		<modal v-if="modal.openned">
-		<h3 slot="header">Mensagem</h3>
-		<span slot="body">{{modal.message}}</span>
-		<div slot="footer">
-			<button class="modal-default-button" @click="closeModal">{{modal.closeButtonTxt}}</button>
-			<template v-if="modal.confirm">
-			<button class="modal-default-button" style="margin-right: 15px;" @click="confirmModal">SIM</button>
-			</template>
-		</div>
+		<component :is="currentView" :ref="currentView"></component>
+	</div>
+	<div id="modal">
+		<modal v-if="openned">
+			<h3 slot="header">Mensagem</h3>
+			<span slot="body">{{msg}}</span>
+			<div slot="footer">
+				<button class="modal-default-button" @click="close">{{closeButtonTxt}}</button>
+				<template v-if="isConfirm">
+					<button class="modal-default-button" style="margin-right: 15px;" @click="confirm">SIM</button>
+				</template>
+			</div>
 		</modal>
 	</div>
 </body>

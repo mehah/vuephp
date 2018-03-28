@@ -14,19 +14,14 @@ class LoginController extends MainController
 
     public function entrar(Login $login): void
     {
-        if (! ($login->user === "admin" && $login->password === "teste")) {
-            $this->showModal('Usuário ou senha invalido(s).');
-            return;
+        $logged = $login->user === "admin" && $login->password === "teste";
+        if ($logged) {
+            $this->getSession()->setAttribute("login", $login);
+        } else {
+            $this->setData('msg', 'Usuário ou senha invalido(s).');
         }
         
-        $this->getSession()->setAttribute("login", $login);
-        $this->setData('logged', true);
-        $this->redirect('home');
-    }
-
-    public function sair()
-    {
-        $this->getSession()->destroy();
+        $this->setData('logged', $logged);
     }
 }
 

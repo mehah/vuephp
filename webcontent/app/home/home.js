@@ -1,1 +1,1 @@
-this.el = "#app";
+App("#app");
