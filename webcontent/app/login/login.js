@@ -5,7 +5,7 @@ this.methods.entrar = function() {
 		if(this.logged) {
 			this.redirect('home');
 		} else {
-			Modal.message(this.msg);
+			Modal.message('Usuário ou senha invalido(s).');
 		}
 	});
 };
