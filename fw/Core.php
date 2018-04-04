@@ -1,7 +1,7 @@
 <?php
 namespace fw;
 
-use http\HttpSession\HttpSession;
+use fw\http\HttpSession;
 
 class Core
 {
@@ -41,6 +41,7 @@ class Core
 
     public static function init(): void
     {
+        //echo $_SERVER['PHP_SELF'];
         include ('project.config.php');
         
         $TAGET_CLASS_NAME = $TARGET_NAME = null;
@@ -65,26 +66,18 @@ class Core
             }
         }
         
-        include ('fw/TemplateController.php');
-        include ('fw/database/DatabaseConnection.php');
-        include ('fw/database/DatabaseEntity.php');
-        include ('fw/database/Entity.php');
-        include ('fw/http/HttpSession.php');
-        include ('database.config.php');
-        
-        $TARGET_NAME = $exURL[0];
-        $TAGET_CLASS_NAME = ucfirst($exURL[0]);
-        
         spl_autoload_register(function ($class_name) {
-            if (strpos($class_name, 'src') === false) {
-                $class_name = 'src\\' . $class_name;
-            }
             include $class_name . '.php';
         });
         
         session_start();
         
-        $APP_CACHED = ($_REQUEST['cached'] ?? false) === 'true'? true: false;
+        include ('database.config.php');
+        
+        $TARGET_NAME = $exURL[0];
+        $TAGET_CLASS_NAME = ucfirst($exURL[0]);
+        
+        $APP_CACHED = ($_REQUEST['cached'] ?? false) === 'true' ? true : false;
         
         $INDEX_CONTENT = '';
         $IS_AJAX = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && ! empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
@@ -106,7 +99,6 @@ class Core
         }
         
         $srcPath = 'src/controller/' . $TAGET_CLASS_NAME . 'Controller.php';
-        
         $methodsList = $data = '{}';
         if (file_exists($srcPath)) {
             $session = self::getSession();
@@ -115,6 +107,7 @@ class Core
             $className = 'src\controller\\' . $TAGET_CLASS_NAME . 'Controller';
             
             $controller = null;
+            
             if ($HAS_METHOD) {
                 if (isset($session[$TAGET_CLASS_NAME])) {
                     $controller = $session[$TAGET_CLASS_NAME];
@@ -131,7 +124,11 @@ class Core
                 $session[$TAGET_CLASS_NAME] = $controller;
             }
             
-            $posMethod = count($exURL) - 1;
+            $requestedMethod = $exURL[count($exURL) - 1];
+            if ($controller instanceof RuleController && ! self::hasAccess($controller, $requestedMethod)) {
+                header('HTTP/1.1 401 Unauthorized');
+                die('Você não está autorizado a executar essa ação.');
+            }
             
             $reflectionClass = new \ReflectionClass($className);
             
@@ -160,9 +157,8 @@ class Core
                 $methodsList = '{' . $methodsList . '}';
             }
             
-            $methodName = $exURL[$posMethod];
-            if ($reflectionClass->hasMethod($methodName)) {
-                $reflectionMethod = $reflectionClass->getMethod($methodName);
+            if ($reflectionClass->hasMethod($requestedMethod)) {
+                $reflectionMethod = $reflectionClass->getMethod($requestedMethod);
                 
                 $resMethod = null;
                 if (isset($_REQUEST['arg0'])) {
@@ -229,6 +225,32 @@ class Core
         echo $INDEX_CONTENT;
     }
 
+    private static function hasAccess(TemplateController $controller, String $methodName): bool
+    {
+        $user = Core::getSessionInstance()->getUserPrincipal();
+        if ($user == null) {
+            return false;
+        }
+        
+        $controllerRules = $controller->getRules();
+        
+        if ($controllerRules && count($controllerRules) > 0) {
+            $rule = $controllerRules[$methodName];
+            if ($rule && $rule !== "*") {
+                $userRules = $user->getRules();
+                foreach ($userRules as $v) {
+                    if (in_array($v, $controllerRules)) {
+                        return true;
+                    }
+                }
+                
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
     private static function setClassProps($data, $object): void
     {
         $reflectionClass = new \ReflectionClass($object);
@@ -246,6 +268,11 @@ class Core
         }
     }
 
+    public static function getSessionInstance(): HttpSession
+    {
+        return $_SESSION[Core::$PROJECT_NAME]['INSTANCE'];
+    }
+
     public static function getSession(): Array
     {
         if (isset($_SESSION[self::$PROJECT_NAME])) {
@@ -259,4 +286,3 @@ class Core
         return $session;
     }
 }
-
