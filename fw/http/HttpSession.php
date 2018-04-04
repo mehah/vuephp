@@ -1,10 +1,13 @@
 <?php
-namespace http\HttpSession;
+namespace fw\http;
 
 use fw\Core;
+use fw\UserPrincipal;
 
 class HttpSession
 {
+
+    private $userPrincipal;
 
     private $attr = Array();
 
@@ -24,5 +27,18 @@ class HttpSession
     public function destroy()
     {
         unset($_SESSION[Core::$PROJECT_NAME]);
+    }
+
+    public function setUserPrincipal(UserPrincipal $user)
+    {
+        if ($this->userPrincipal != null)
+            throw new \RuntimeException("Não é possivel mudar o usuário, só quando não houver nenhum vinculado a sessão.");
+        
+        $this->userPrincipal = $user;
+    }
+
+    public function getUserPrincipal(): ?UserPrincipal
+    {
+        return $this->userPrincipal;
     }
 }

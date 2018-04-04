@@ -4,25 +4,6 @@
 <title>Vuephp</title>
 </head>
 <body>
-	<script type="text/x-template" id="modal-template">
-	<transition name="modal">
-	<div class="modal-mask">
-		<div class="modal-wrapper">
-			<div class="modal-container">
-				<div class="modal-header">
-					<slot name="header"></slot>
-				</div>
-				<div class="modal-body">
-					<slot name="body"></slot>
-				</div>
-				<div class="modal-footer">
-					<slot name="footer"></slot>
-				</div>
-			</div>
-		</div>
-	</div>
-	</transition>
-	</script>
 	<div id="app">
 		<header> EXEMPLO DE ARQUITETURA </header>
 		<nav id="menu">
@@ -31,7 +12,6 @@
 				<li><a href="#" v-goto:consultarUser v-if="logged">Consultar Usuário</a></li>
 				<li><a href="#" v-goto:manterUser v-if="logged">Cadastrar Usuário</a></li>
 				<li><a href="#" v-goto:login v-if="!logged">Login</a></li>
-				<li><a href="#" v-goto:manterCidade v-if="logged">Cadastrar Cidade</a></li>
 				<li><a href="#" v-if="logged" @click.prevent="logout">Sair</a></li>
 			</ul>
 		</nav>

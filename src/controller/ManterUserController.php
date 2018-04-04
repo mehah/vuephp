@@ -1,10 +1,11 @@
 <?php
 namespace src\controller;
 
-use modal\User;
+use fw\RuleController;
 use src\modal\City;
+use src\modal\User;
 
-class ManterUserController extends MainController
+class ManterUserController extends MainController implements RuleController
 {
 
     public function init(int $id = null): void
@@ -48,6 +49,11 @@ class ManterUserController extends MainController
             $res,
             $msg
         );
+    }
+
+    public static function getRules(): ?array
+    {
+        return null;
     }
 }
 

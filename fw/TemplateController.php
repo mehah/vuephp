@@ -1,7 +1,7 @@
 <?php
 namespace fw;
 
-use http\HttpSession\HttpSession;
+use fw\http\HttpSession;
 
 abstract class TemplateController
 {
@@ -32,7 +32,7 @@ abstract class TemplateController
 
     protected function getSession(): HttpSession
     {
-        return $_SESSION[Core::$PROJECT_NAME]['INSTANCE'];
+        return Core::getSessionInstance();
     }
 }
 

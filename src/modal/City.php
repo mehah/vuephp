@@ -9,7 +9,7 @@ class City extends Entity
     public static $table = 'citys';
 
     public static $primaryKey = 'id';
-    
+
     public static $relationship = Array();
 
     public $id;

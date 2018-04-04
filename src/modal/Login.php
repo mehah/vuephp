@@ -1,11 +1,18 @@
 <?php
 namespace src\modal;
 
-class Login
+use fw\UserPrincipal;
+
+class Login implements UserPrincipal
 {
 
     public $user;
 
     public $password;
+
+    public function getRules(): ?array
+    {
+        return null;
+    }
 }
 

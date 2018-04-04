@@ -15,7 +15,7 @@ class LoginController extends MainController
     public function entrar(Login $login): void
     {
         if ($login->user === "admin" && $login->password === "teste") {
-            $this->getSession()->setAttribute("login", $login);
+            $this->getSession()->setUserPrincipal($login);
             $this->setData('logged', true);
         }
     }

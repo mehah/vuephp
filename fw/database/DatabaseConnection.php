@@ -22,7 +22,7 @@ class DatabaseConnection
         } catch (PDOException $e) {
             echo ('Não foi possivel estabelecer uma conexão.');
         }
-        
+
         return null;
     }
 }

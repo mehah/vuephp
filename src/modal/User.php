@@ -1,8 +1,7 @@
 <?php
-namespace modal;
+namespace src\modal;
 
 use fw\database\Entity;
-use src\modal\City;
 
 class User extends Entity
 {
