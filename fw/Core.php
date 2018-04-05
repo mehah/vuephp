@@ -5,71 +5,52 @@ use fw\http\HttpSession;
 
 class Core
 {
+
     public static $PROJECT_NAME;
 
     public static $PRINCIPAL_MODULE_NAME;
 
     public static function init(): void
     {
-        //echo $_SERVER['PHP_SELF'];
-        include ('project.config.php');
-        
-        $TAGET_CLASS_NAME = $TARGET_NAME = null;
-        $HAS_METHOD = false;
-        $APP_URL = self::$PRINCIPAL_MODULE_NAME;
-        
-        if (isset($_REQUEST['url'])) {
-            $APP_URL = $_REQUEST['url'];
-        }
-        
-        /*if($pos = strpos(':', $APP_URL)) {
-            
-        }*/
-        
-        $exURL = explode("/", $APP_URL, 3);
-        $CONTEXT_PATH = str_repeat('../', count($exURL) - 1);
-        
-        if (isset($exURL[1])) {
-            $isNumeric = is_numeric($exURL[1]);
-            if (! ($HAS_METHOD = (strlen($exURL[1]) > 0) && ! $isNumeric)) { // Se terminar com /, não executa nada.
-                if (! $isNumeric) {
-                    die();
-                } else {
-                    $_REQUEST['arg0'] = '[' . $exURL[1] . ']';
-                }
-            }
-        }
-        
         spl_autoload_register(function ($class_name) {
             include $class_name . '.php';
         });
         
         session_start();
         
-        include ('database.config.php');
-        
-        $TARGET_NAME = $exURL[0];
-        $TAGET_CLASS_NAME = ucfirst($exURL[0]);
+        include 'project.config.php';
+        include 'database.config.php';
         
         $APP_CACHED = ($_REQUEST['cached'] ?? false) === 'true';
+        $APP_URL = $_REQUEST['url'] ?? self::$PRINCIPAL_MODULE_NAME;
+        $exURL = explode("/", $APP_URL, 3);
+        
+        $CONTEXT_PATH = str_replace('\\', '/', dirname($_SERVER['PHP_SELF'])) . '/';
+        $HAS_METHOD = false;
+        
+        $TARGET_NAME = $exURL[0];
+        $TAGET_CLASS_NAME = ucfirst($TARGET_NAME);
         
         $INDEX_CONTENT = '';
         $IS_AJAX = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && ! empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
         
-        if (! $IS_AJAX) {
-            $INDEX_CONTENT .= '<script type="text/javascript" src="' . $CONTEXT_PATH . 'fw/vue.min.js"></script>';
-            
-            $url = 'webcontent/main.js';
-            if (file_exists($url)) {
-                $INDEX_CONTENT .= '<script type="text/javascript" src="' . $CONTEXT_PATH . $url . '"></script>';
+        if (isset($exURL[1])) {
+            if (is_numeric($exURL[1])) { // Se terminar com /, não executa nada.
+                $_REQUEST['arg0'] = '[' . $exURL[1] . ']';
+            } else {
+                $HAS_METHOD = (strlen($exURL[1]) > 0);
             }
+        }
+        
+        if (! $IS_AJAX) {
+            $INDEX_CONTENT .= '<script type="text/javascript" src="' . $CONTEXT_PATH . 'fw/vue.min.js"></script>';           
             
-            $url = 'webcontent/styles.css';
+            $url = 'WebContent/styles.css';
             if (file_exists($url)) {
                 $INDEX_CONTENT .= '<link rel="stylesheet" type="text/css" href="' . $CONTEXT_PATH . $url . '">';
             }
             
-            $INDEX_CONTENT .= file_get_contents('webcontent/index.html');
+            $INDEX_CONTENT .= file_get_contents('WebContent/index.html');
         }
         
         $srcPath = 'src/controller/' . $TAGET_CLASS_NAME . 'Controller.php';
@@ -81,13 +62,13 @@ class Core
             $className = 'src\controller\\' . $TAGET_CLASS_NAME . 'Controller';
             
             $controller = null;
+            $requestedMethod = null;
             
             if ($HAS_METHOD) {
-                if (isset($session[$TAGET_CLASS_NAME])) {
-                    $controller = $session[$TAGET_CLASS_NAME];
-                }
+                $requestedMethod = $exURL[1];
+                $controller = $session[$TAGET_CLASS_NAME] ?? null;
             } else {
-                $exURL[1] = 'init';
+                $requestedMethod = 'init';
             }
             
             if (! $controller) {
@@ -98,7 +79,6 @@ class Core
                 $session[$TAGET_CLASS_NAME] = $controller;
             }
             
-            $requestedMethod = $exURL[count($exURL) - 1];
             if ($controller instanceof RuleController && ! self::hasAccess($controller, $requestedMethod)) {
                 header('HTTP/1.1 401 Unauthorized');
                 die('Você não está autorizado a executar essa ação.');
@@ -120,13 +100,13 @@ class Core
                         $methodsList .= ',';
                     }
                     
-                    $countParam = $method->getNumberOfParameters()+97;
+                    $countParam = $method->getNumberOfParameters() + 97;
                     $args = '';
                     for ($i = 96; ++ $i < $countParam;) {
                         $args .= chr($i) . ',';
                     }
                     
-                    $methodsList .= '$' . $methodName . ':function(' . $args . 'z){this.request("' . $TARGET_NAME . '/' . $methodName . '", ' . $args . 'z);}';
+                    $methodsList .= '$' . $methodName . ':function(' . $args . 'z){this.request("' . $CONTEXT_PATH . $TARGET_NAME . '/' . $methodName . '", ' . $args . 'z);}';
                 }
                 $methodsList = '{' . $methodsList . '}';
             }
@@ -184,7 +164,7 @@ class Core
             if ($APP_CACHED) {
                 $script = 'Vue.processApp("' . $TARGET_NAME . '", null, ' . (isset($data->d) ? json_encode($data->d) : '{}') . ');';
             } else {
-                $url = 'webcontent/app/' . $TARGET_NAME . '/' . $TARGET_NAME;
+                $url = 'WebContent/app/' . $TARGET_NAME . '/' . $TARGET_NAME;
                 $templateURL = $url . '.html';
                 if (file_exists($templateURL)) {
                     $jsonData = isset($data->d) ? json_encode($data->d) : '{}';
@@ -193,7 +173,14 @@ class Core
                 }
             }
             
-            $INDEX_CONTENT .= $IS_AJAX ? $script : '<script id="!script">' . $script . 'document.getElementById("\!script").remove();</script>';
+            if(!$IS_AJAX) {                
+                $url = 'WebContent/main.js';
+                if (file_exists($url)) {
+                    $INDEX_CONTENT .= '<script type="text/javascript" src="' . $CONTEXT_PATH . $url . '"></script>';
+                }
+            }
+            
+            $INDEX_CONTENT .= $IS_AJAX ? $script : '<script id="!script">Vue.CONTEXT_PATH = ' . $CONTEXT_PATH . ';' . $script . 'document.getElementById("\!script").remove();</script>';
         }
         
         echo $INDEX_CONTENT;
@@ -212,7 +199,7 @@ class Core
             $rule = $controllerRules[$methodName] ?? null;
             if ($rule && $rule !== "*") {
                 $userRules = $user->getRules();
-                if($userRules) {
+                if ($userRules) {
                     foreach ($userRules as $v) {
                         if (in_array($v, $controllerRules)) {
                             return true;
@@ -250,15 +237,9 @@ class Core
     }
 
     public static function getSession(): iterable
-    {
-        if (isset($_SESSION[self::$PROJECT_NAME])) {
-            $session = $_SESSION[self::$PROJECT_NAME];
-        } else {
-            $session = $_SESSION[self::$PROJECT_NAME] = Array(
-                'INSTANCE' => new HttpSession()
-            );
-        }
-        
-        return $session;
+    {        
+        return $_SESSION[self::$PROJECT_NAME] ?? $_SESSION[self::$PROJECT_NAME] = Array(
+            'INSTANCE' => new HttpSession()
+        );
     }
 }
