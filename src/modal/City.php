@@ -3,17 +3,16 @@ namespace src\modal;
 
 use fw\database\Entity;
 
-class City extends Entity
-{
+class City extends Entity {
 
-    public static $table = 'citys';
+	public static $table = 'citys';
 
-    public static $primaryKey = 'id';
+	public static $primaryKey = 'id';
 
-    public static $relationship = Array();
+	public static $relationship = Array();
 
-    public $id;
+	public $id;
 
-    public $name;
+	public $name;
 }
 

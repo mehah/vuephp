@@ -1,8 +1,8 @@
 <?php
 namespace fw;
 
-interface UserPrincipal
-{    
-    public function getRules() : ?Array;
+interface UserPrincipal {
+
+	public function getRules(): ?Array;
 }
 

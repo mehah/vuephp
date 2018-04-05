@@ -1,12 +1,10 @@
 <?php
 namespace src\controller;
 
-class HomeController extends MainController
-{
+class HomeController extends MainController {
 
-    public function init(): void
-    {
-        parent::init();
-    }
+	public function init(): void {
+		parent::init();
+	}
 }
 

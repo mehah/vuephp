@@ -3,16 +3,16 @@ namespace src\modal;
 
 use fw\UserPrincipal;
 
-class Login implements UserPrincipal
-{
+class Login implements UserPrincipal {
 
-    public $user;
+	public $user;
 
-    public $password;
+	public $password;
 
-    public function getRules(): ?array
-    {
-        return Array("ALTERAR_USER");
-    }
+	public function getRules(): ?array {
+		return Array(
+			"ALTERAR_USER"
+		);
+	}
 }
 

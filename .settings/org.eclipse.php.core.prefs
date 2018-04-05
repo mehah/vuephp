@@ -1,4 +1,2 @@
 eclipse.preferences.version=1
-include_path=
-phpVersion=php7.2
-useShortTags=true
+include_path=0;/vuephp
