@@ -21,7 +21,7 @@ class ManterUserController extends MainController implements RuleController
         $this->setData('citys', City::all());
     }
 
-    public function inserir(User $user): Array
+    public function inserir(User $user): iterable
     {
         $res = false;
         if (! $user->name) {
@@ -36,7 +36,7 @@ class ManterUserController extends MainController implements RuleController
         );
     }
 
-    public function alterar(User $user): Array
+    public function alterar(User $user): iterable
     {
         $res = false;
         if (! $user->name) {
@@ -53,7 +53,9 @@ class ManterUserController extends MainController implements RuleController
 
     public static function getRules(): ?array
     {
-        return null;
+        return Array(
+            "alterar" => "ALTERAR_USER"
+        );
     }
 }
 

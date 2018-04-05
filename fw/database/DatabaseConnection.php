@@ -1,8 +1,6 @@
 <?php
 namespace fw\database;
 
-use PDO;
-use PDOException;
 
 class DatabaseConnection
 {
@@ -15,11 +13,11 @@ class DatabaseConnection
 
     public static $user;
 
-    public static function getInstance(): PDO
+    public static function getInstance(): \PDO
     {
         try {
-            return new PDO('mysql:host=' . self::$host . ';dbname=' . self::$dbName, self::$user, self::$password);
-        } catch (PDOException $e) {
+            return new \PDO('mysql:host=' . self::$host . ';dbname=' . self::$dbName, self::$user, self::$password);
+        } catch (\PDOException $e) {
             echo ('Não foi possivel estabelecer uma conexão.');
         }
 

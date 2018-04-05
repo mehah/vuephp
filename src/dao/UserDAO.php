@@ -2,12 +2,12 @@
 namespace src\dao;
 
 use fw\database\DatabaseConnection;
-use modal\User;
+use src\modal\User;
 
 class UserDAO
 {
 
-    public static function find(int $id)
+    public static function find(int $id) : ?User
     {
         $conn = DatabaseConnection::getInstance();
         $conn->setAttribute(\PDO::ATTR_FETCH_TABLE_NAMES, true);

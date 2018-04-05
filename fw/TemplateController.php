@@ -13,7 +13,7 @@ abstract class TemplateController
         $this->_VUE_DATA = new \stdClass();
     }
 
-    protected function getData(): \stdClass
+    protected function getData(): object
     {
         $o = null;
         if (isset($this->_VUE_DATA->d)) {

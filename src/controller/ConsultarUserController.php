@@ -15,7 +15,7 @@ class ConsultarUserController extends MainController implements RuleController
         $this->setData('users', User::all());
     }
 
-    public function deletar(User $user): Array
+    public function deletar(User $user): iterable
     {
         $msg = ($res = $user->delete()) ? 'Usuário \'' . $user->name . '\' removido com sucesso.' : 'Erro ao tentar remover o usuário \'' . $user->name . '\'.';
         
@@ -25,7 +25,7 @@ class ConsultarUserController extends MainController implements RuleController
         );
     }
 
-    public function deletarSelecionados(Array $users): Array
+    public function deletarSelecionados(Array $users): iterable
     {
         $msg = ($res = UserService::deletarUsuarios($users)) ? 'Usuários selecionados foram removido com sucesso.' : 'Erro ao tentar remover todos os usuários.';
         

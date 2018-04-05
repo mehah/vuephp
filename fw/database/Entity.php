@@ -29,7 +29,7 @@ abstract class Entity
         return DatabaseEntity::find(get_called_class(), $id);
     }
 
-    public static function all(): Array
+    public static function all(): iterable
     {
         return DatabaseEntity::all(get_called_class());
     }

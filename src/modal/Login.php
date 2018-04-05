@@ -12,7 +12,7 @@ class Login implements UserPrincipal
 
     public function getRules(): ?array
     {
-        return null;
+        return Array("ALTERAR_USER");
     }
 }
 

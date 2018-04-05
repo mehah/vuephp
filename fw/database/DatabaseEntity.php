@@ -4,7 +4,7 @@ namespace fw\database;
 class DatabaseEntity
 {
 
-    public static function all(string $className): Array
+    public static function all(string $className): iterable
     {
         $conn = DatabaseConnection::getInstance();
 

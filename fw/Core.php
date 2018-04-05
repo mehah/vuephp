@@ -5,39 +5,9 @@ use fw\http\HttpSession;
 
 class Core
 {
-
     public static $PROJECT_NAME;
 
     public static $PRINCIPAL_MODULE_NAME;
-
-    private const _ARGS = array(
-        'a',
-        'b',
-        'c',
-        'd',
-        'e',
-        'f',
-        'g',
-        'h',
-        'i',
-        'j',
-        'k',
-        'l',
-        'm',
-        'n',
-        'o',
-        'p',
-        'q',
-        'r',
-        's',
-        't',
-        'u',
-        'v',
-        'w',
-        'x ',
-        'y',
-        'z'
-    );
 
     public static function init(): void
     {
@@ -51,6 +21,10 @@ class Core
         if (isset($_REQUEST['url'])) {
             $APP_URL = $_REQUEST['url'];
         }
+        
+        /*if($pos = strpos(':', $APP_URL)) {
+            
+        }*/
         
         $exURL = explode("/", $APP_URL, 3);
         $CONTEXT_PATH = str_repeat('../', count($exURL) - 1);
@@ -77,7 +51,7 @@ class Core
         $TARGET_NAME = $exURL[0];
         $TAGET_CLASS_NAME = ucfirst($exURL[0]);
         
-        $APP_CACHED = ($_REQUEST['cached'] ?? false) === 'true' ? true : false;
+        $APP_CACHED = ($_REQUEST['cached'] ?? false) === 'true';
         
         $INDEX_CONTENT = '';
         $IS_AJAX = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && ! empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
@@ -146,10 +120,10 @@ class Core
                         $methodsList .= ',';
                     }
                     
-                    $countParam = $method->getNumberOfParameters();
+                    $countParam = $method->getNumberOfParameters()+97;
                     $args = '';
-                    for ($i = - 1; ++ $i < $countParam;) {
-                        $args .= self::_ARGS[$i] . ',';
+                    for ($i = 96; ++ $i < $countParam;) {
+                        $args .= chr($i) . ',';
                     }
                     
                     $methodsList .= '$' . $methodName . ':function(' . $args . 'z){this.request("' . $TARGET_NAME . '/' . $methodName . '", ' . $args . 'z);}';
@@ -208,14 +182,14 @@ class Core
         } else {
             $script = '';
             if ($APP_CACHED) {
-                $script = 'processAppTemplate("' . $TARGET_NAME . '", null, ' . (isset($data->d) ? json_encode($data->d) : '{}') . ');';
+                $script = 'Vue.processApp("' . $TARGET_NAME . '", null, ' . (isset($data->d) ? json_encode($data->d) : '{}') . ');';
             } else {
                 $url = 'webcontent/app/' . $TARGET_NAME . '/' . $TARGET_NAME;
                 $templateURL = $url . '.html';
                 if (file_exists($templateURL)) {
                     $jsonData = isset($data->d) ? json_encode($data->d) : '{}';
                     $appURL = $url . '.js';
-                    $script = 'processAppTemplate("' . $TARGET_NAME . '",' . json_encode(file_get_contents($templateURL)) . ', ' . $jsonData . ', ' . $methodsList . ', ' . (file_exists($appURL) ? 'function(App) {' . file_get_contents($appURL) . '}' : 'null') . ');';
+                    $script = 'Vue.processApp("' . $TARGET_NAME . '",' . json_encode(file_get_contents($templateURL)) . ', ' . $jsonData . ', ' . $methodsList . ', ' . (file_exists($appURL) ? 'function(App) {' . file_get_contents($appURL) . '}' : 'null') . ');';
                 }
             }
             
@@ -235,12 +209,14 @@ class Core
         $controllerRules = $controller->getRules();
         
         if ($controllerRules && count($controllerRules) > 0) {
-            $rule = $controllerRules[$methodName];
+            $rule = $controllerRules[$methodName] ?? null;
             if ($rule && $rule !== "*") {
                 $userRules = $user->getRules();
-                foreach ($userRules as $v) {
-                    if (in_array($v, $controllerRules)) {
-                        return true;
+                if($userRules) {
+                    foreach ($userRules as $v) {
+                        if (in_array($v, $controllerRules)) {
+                            return true;
+                        }
                     }
                 }
                 
@@ -273,7 +249,7 @@ class Core
         return $_SESSION[Core::$PROJECT_NAME]['INSTANCE'];
     }
 
-    public static function getSession(): Array
+    public static function getSession(): iterable
     {
         if (isset($_SESSION[self::$PROJECT_NAME])) {
             $session = $_SESSION[self::$PROJECT_NAME];
