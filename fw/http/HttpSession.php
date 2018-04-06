@@ -17,7 +17,7 @@ class HttpSession {
 		return $this->attr[$index] ?? null;
 	}
 
-	public function setAttribute($index,$value) {
+	public function setAttribute($index, $value) {
 		$this->attr[$index] = $value;
 	}
 

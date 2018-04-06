@@ -7,7 +7,7 @@ class Core {
 
 	public static $PROJECT_NAME;
 
-	public static $PRINCIPAL_MODULE_NAME;
+	public static $DEFAULT_MODULE_NAME;
 
 	public static function init(): void {
 		spl_autoload_register(function ($class_name) {
@@ -16,11 +16,10 @@ class Core {
 		
 		session_start();
 		
-		include 'project.config.php';
-		include 'database.config.php';
+		include 'src/project.config.php';
 		
 		$APP_CACHED = ($_REQUEST['cached'] ?? false) === 'true';
-		$APP_URL = $_REQUEST['url'] ?? self::$PRINCIPAL_MODULE_NAME;
+		$APP_URL = $_REQUEST['url'] ?? self::$DEFAULT_MODULE_NAME;
 		$exURL = explode("/", $APP_URL, 3);
 		
 		$CONTEXT_PATH = str_replace('\\', '/', dirname($_SERVER['PHP_SELF'])) . '/';
@@ -43,16 +42,16 @@ class Core {
 		if (! $IS_AJAX) {
 			$INDEX_CONTENT .= '<script type="text/javascript" src="' . $CONTEXT_PATH . 'fw/vue.min.js"></script>';
 			
-			$url = 'WebContent/styles.css';
+			$url = 'public_html/styles.css';
 			if (file_exists($url)) {
 				$INDEX_CONTENT .= '<link rel="stylesheet" type="text/css" href="' . $CONTEXT_PATH . $url . '">';
 			}
 			
-			$INDEX_CONTENT .= file_get_contents('WebContent/index.html');
+			$INDEX_CONTENT .= file_get_contents('public_html/index.html');
 		}
 		
 		$srcPath = 'src/controller/' . $TAGET_CLASS_NAME . 'Controller.php';
-		$methodsList = $data = '{}';
+		$methodsList = $vueDT = '{}';
 		if (file_exists($srcPath)) {
 			$session = self::getSession();
 			
@@ -112,7 +111,11 @@ class Core {
 			if ($reflectionClass->hasMethod($requestedMethod)) {
 				$reflectionMethod = $reflectionClass->getMethod($requestedMethod);
 				
-				$resMethod = null;
+				$reflectionClass = new \ReflectionClass(TemplateController::class);
+				$propData = $reflectionClass->getProperty("_VUE_DATA");
+				$propData->setAccessible(true);
+				$vueDT = $propData->getValue($controller);
+				
 				if (isset($_REQUEST['arg0'])) {
 					$data = json_decode($_REQUEST['arg0']);
 					
@@ -136,43 +139,34 @@ class Core {
 						}
 					}
 					
-					$resMethod = $reflectionMethod->invokeArgs($controller, $list);
+					$vueDT->ds = $reflectionMethod->invokeArgs($controller, $list);
 				} else {
-					$resMethod = $reflectionMethod->invoke($controller);
+					$vueDT->ds = $reflectionMethod->invoke($controller);
 				}
-				
-				$reflectionClass = new \ReflectionClass('fw\TemplateController');
-				$propData = $reflectionClass->getProperty("_VUE_DATA");
-				$propData->setAccessible(true);
-				$data = $propData->getValue($controller);
 				$propData->setValue($controller, new \stdClass());
-				
-				if ($resMethod) {
-					$data->ds = $resMethod;
-				}
 			}
 		}
 		
 		if ($HAS_METHOD) {
-			if (isset($data->d) || isset($data->ds)) {
-				$INDEX_CONTENT = json_encode($data);
+			if (isset($vueDT->d) || isset($vueDT->ds)) {
+				$INDEX_CONTENT = json_encode($vueDT);
 			}
 		} else {
-			$script = '';
+			$script = null;
 			if ($APP_CACHED) {
-				$script = 'Vue.processApp("' . $TARGET_NAME . '", null, ' . (isset($data->d) ? json_encode($data->d) : '{}') . ');';
+				$script = 'Vue.processApp("' . $TARGET_NAME . '", null, ' . (isset($vueDT->d) ? json_encode($vueDT->d) : '{}') . ');';
 			} else {
-				$url = 'WebContent/app/' . $TARGET_NAME . '/' . $TARGET_NAME;
+				$url = 'public_html/app/' . $TARGET_NAME . '/' . $TARGET_NAME;
 				$templateURL = $url . '.html';
 				if (file_exists($templateURL)) {
-					$jsonData = isset($data->d) ? json_encode($data->d) : '{}';
+					$jsonData = isset($vueDT->d) ? json_encode($vueDT->d) : '{}';
 					$appURL = $url . '.js';
 					$script = 'Vue.processApp("' . $TARGET_NAME . '",' . json_encode(file_get_contents($templateURL)) . ', ' . $jsonData . ', ' . $methodsList . ', ' . (file_exists($appURL) ? 'function(App) {' . file_get_contents($appURL) . '}' : 'null') . ');';
 				}
 			}
 			
 			if (! $IS_AJAX) {
-				$url = 'WebContent/main.js';
+				$url = 'public_html/main.js';
 				if (file_exists($url)) {
 					$INDEX_CONTENT .= '<script type="text/javascript" src="' . $CONTEXT_PATH . $url . '"></script>';
 				}
@@ -184,7 +178,7 @@ class Core {
 		echo $INDEX_CONTENT;
 	}
 
-	private static function hasAccess(TemplateController $controller,String $methodName): bool {
+	private static function hasAccess(TemplateController $controller, String $methodName): bool {
 		$user = Core::getSessionInstance()->getUserPrincipal();
 		if ($user == null) {
 			return false;
@@ -211,7 +205,7 @@ class Core {
 		return true;
 	}
 
-	private static function setClassProps($data,$object): void {
+	private static function setClassProps($data, $object): void {
 		$reflectionClass = new \ReflectionClass($object);
 		$defaults = $reflectionClass->getDefaultProperties();
 		

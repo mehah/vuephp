@@ -24,7 +24,7 @@ class DatabaseEntity {
 		}
 	}
 
-	public static function find(string $className,$key): Entity {
+	public static function find(string $className, $key): Entity {
 		$entity = new $className();
 		$class = new \ReflectionClass($entity);
 		
@@ -219,7 +219,7 @@ class DatabaseEntity {
 		return $stmt->execute();
 	}
 
-	public static function deleteWithFilter(string $className,Array $fieldsFilter): bool {
+	public static function deleteWithFilter(string $className, Array $fieldsFilter): bool {
 		if (! $fieldsFilter || count($fieldsFilter) == 0) {
 			throw new \Exception("Não foi definido os campos para filtro.");
 		}

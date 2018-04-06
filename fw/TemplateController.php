@@ -12,17 +12,10 @@ abstract class TemplateController {
 	}
 
 	protected function getData(): object {
-		$o = null;
-		if (isset($this->_VUE_DATA->d)) {
-			$o = $this->_VUE_DATA->d;
-		} else {
-			$o = $this->_VUE_DATA->d = new \stdClass();
-		}
-		
-		return $o;
+		return $this->_VUE_DATA->d ?? ($this->_VUE_DATA->d = new \stdClass());
 	}
 
-	protected function setData($name,$value): void {
+	protected function setData($name, $value): void {
 		$this->getData()->{$name} = $value;
 	}
 
