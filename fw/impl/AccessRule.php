@@ -1,7 +1,7 @@
 <?php
-namespace fw;
+namespace fw\impl;
 
-interface RuleController {
+interface AccessRule {
 
 	public static function getRules(): ?Array;
 }

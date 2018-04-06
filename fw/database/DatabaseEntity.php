@@ -1,7 +1,7 @@
 <?php
 namespace fw\database;
 
-class DatabaseEntity {
+final class DatabaseEntity {
 
 	public static function all(string $className): iterable {
 		$conn = DatabaseConnection::getInstance();
@@ -20,6 +20,7 @@ class DatabaseEntity {
 			while ($entityDB = $stmt->fetchObject($class->getName())) {
 				array_push($list, $entityDB);
 			}
+			
 			return $list;
 		}
 	}
@@ -44,20 +45,19 @@ class DatabaseEntity {
 		$tableName = $class->getProperty("table")->getValue();
 		$primaryKey = $class->getProperty("primaryKey")->getValue();
 		
-		$relationship = $class->getProperty("relationship");
-		if ($relationship) {
-			$relationship = $relationship->getValue();
-		}
-		
 		$relString = '';
-		foreach ($relationship as $propName => $fieldName) {
-			$rel = $class->getProperty($propName)->getValue($entity);
-			$classRel = new \ReflectionClass($rel);
+		if ($relationship = $class->getProperty("relationship")) {
+			$relationship = $relationship->getValue();
 			
-			$tableNameRel = $classRel->getProperty("table")->getValue();
-			$primaryKeyRel = $classRel->getProperty("primaryKey")->getValue();
-			
-			$relString .= ' LEFT JOIN ' . $tableNameRel . ' ON ' . $tableName . '.' . $fieldName . '=' . $tableNameRel . '.' . $primaryKeyRel;
+			foreach ($relationship as $propName => $fieldName) {
+				$rel = $class->getProperty($propName)->getValue($entity);
+				$classRel = new \ReflectionClass($rel);
+				
+				$tableNameRel = $classRel->getProperty("table")->getValue();
+				$primaryKeyRel = $classRel->getProperty("primaryKey")->getValue();
+				
+				$relString .= ' LEFT JOIN ' . $tableNameRel . ' ON ' . $tableName . '.' . $fieldName . '=' . $tableNameRel . '.' . $primaryKeyRel;
+			}
 		}
 		
 		$stmt = $conn->query('SELECT * FROM `' . $tableName . '`' . $relString . ' WHERE ' . $tableName . '.' . $primaryKey . ' = ' . $class->getProperty($primaryKey)
@@ -75,7 +75,7 @@ class DatabaseEntity {
 					continue;
 				}
 				
-				if ($rel = $relationship[$name] ?? null) {
+				if ($relationship && $rel = $relationship[$name] ?? null) {
 					$entityRel = $entity->{$name};
 					
 					$classRel = new \ReflectionClass($entityRel);
@@ -127,7 +127,7 @@ class DatabaseEntity {
 			}
 			
 			$value = $prop->getValue($entity);
-			if ($value && $r = $relationship[$name] ?? null) {
+			if ($value && $relationship && $r = $relationship[$name] ?? null) {
 				$name = $r;
 				$class = new \ReflectionClass($value);
 				$primaryKey = $class->getProperty("primaryKey")->getValue();
@@ -181,7 +181,7 @@ class DatabaseEntity {
 			}
 			
 			$value = $prop->getValue($entity);
-			if ($value && $r = $relationship[$name] ?? null) {
+			if ($value && $relationship && $r = $relationship[$name] ?? null) {
 				$name = $r;
 				$class = new \ReflectionClass($value);
 				$primaryKey = $class->getProperty("primaryKey")->getValue();

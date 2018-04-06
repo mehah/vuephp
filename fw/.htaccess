@@ -1,0 +1,3 @@
+RewriteEngine On
+RewriteCond %{REQUEST_URI} !\.(js)$ [NC]
+RewriteRule ^.*$ /404 [L]

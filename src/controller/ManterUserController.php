@@ -1,11 +1,11 @@
 <?php
 namespace src\controller;
 
-use fw\RuleController;
+use fw\impl\AccessRule;
 use src\modal\City;
 use src\modal\User;
 
-class ManterUserController extends MainController implements RuleController {
+class ManterUserController extends MainController implements AccessRule {
 
 	public function init(int $id = null): void {
 		parent::init();

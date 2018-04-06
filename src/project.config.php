@@ -1,8 +1,8 @@
 <?php
-use fw\Core;
+use fw\Project;
 use fw\database\DatabaseConnection;
 
-Core::$PROJECT_NAME = "ARQUITETURA";
-Core::$DEFAULT_MODULE_NAME = "home";
+Project::$name = "ARQUITETURA";
+Project::$defaultModule = "home";
 
 DatabaseConnection::register('default', 'mysql', '127.0.0.1', 'arquitetura', 'root');

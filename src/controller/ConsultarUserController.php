@@ -1,11 +1,11 @@
 <?php
 namespace src\controller;
 
-use fw\RuleController;
+use fw\impl\AccessRule;
 use src\modal\User;
 use src\service\UserService;
 
-class ConsultarUserController extends MainController implements RuleController {
+class ConsultarUserController extends MainController implements AccessRule {
 
 	public function init(): void {
 		parent::init();

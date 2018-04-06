@@ -1,10 +1,10 @@
 <?php
 namespace fw\http;
 
-use fw\Core;
+use fw\Project;
 use fw\UserPrincipal;
 
-class HttpSession {
+final class HttpSession {
 
 	private $userPrincipal;
 
@@ -22,7 +22,7 @@ class HttpSession {
 	}
 
 	public function destroy() {
-		unset($_SESSION[Core::$PROJECT_NAME]);
+		unset($_SESSION[Project::$name]);
 	}
 
 	public function setUserPrincipal(UserPrincipal $user) {

@@ -2,12 +2,9 @@
 namespace fw;
 
 use fw\http\HttpSession;
+use fw\impl\AccessRule;
 
-class Core {
-
-	public static $PROJECT_NAME;
-
-	public static $DEFAULT_MODULE_NAME;
+final class Core {
 
 	public static function init(): void {
 		spl_autoload_register(function ($class_name) {
@@ -19,7 +16,7 @@ class Core {
 		include 'src/project.config.php';
 		
 		$APP_CACHED = ($_REQUEST['cached'] ?? false) === 'true';
-		$APP_URL = $_REQUEST['url'] ?? self::$DEFAULT_MODULE_NAME;
+		$APP_URL = $_REQUEST['url'] ?? Project::$defaultModule;
 		$exURL = explode("/", $APP_URL, 3);
 		
 		$CONTEXT_PATH = str_replace('\\', '/', dirname($_SERVER['PHP_SELF'])) . '/';
@@ -32,7 +29,7 @@ class Core {
 		$IS_AJAX = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && ! empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
 		
 		if (isset($exURL[1])) {
-			if (is_numeric($exURL[1])) { // Se terminar com /, não executa nada.
+			if (is_numeric($exURL[1])) {
 				$_REQUEST['arg0'] = '[' . $exURL[1] . ']';
 			} else {
 				$HAS_METHOD = (strlen($exURL[1]) > 0);
@@ -55,7 +52,7 @@ class Core {
 		if (file_exists($srcPath)) {
 			$session = self::getSession();
 			
-			$controllerPath = self::$PROJECT_NAME . '/controller/' . $TAGET_CLASS_NAME;
+			$controllerPath = Project::$name . '/controller/' . $TAGET_CLASS_NAME;
 			$className = 'src\controller\\' . $TAGET_CLASS_NAME . 'Controller';
 			
 			$controller = null;
@@ -70,13 +67,13 @@ class Core {
 			
 			if (! $controller) {
 				$controller = new $className();
-				if (! ($controller instanceof TemplateController)) {
-					die('O controlador ' . $className . ' precisa extender a classe TemplateController.');
+				if (! ($controller instanceof ComponentController)) {
+					die('O controlador ' . $className . ' precisa extender a classe ComponentController.');
 				}
 				$session[$TAGET_CLASS_NAME] = $controller;
 			}
 			
-			if ($controller instanceof RuleController && ! self::hasAccess($controller, $requestedMethod)) {
+			if ($controller instanceof AccessRule && ! self::hasAccess($controller, $requestedMethod)) {
 				header('HTTP/1.1 401 Unauthorized');
 				die('Você não está autorizado a executar essa ação.');
 			}
@@ -111,7 +108,7 @@ class Core {
 			if ($reflectionClass->hasMethod($requestedMethod)) {
 				$reflectionMethod = $reflectionClass->getMethod($requestedMethod);
 				
-				$reflectionClass = new \ReflectionClass(TemplateController::class);
+				$reflectionClass = new \ReflectionClass(ComponentController::class);
 				$propData = $reflectionClass->getProperty("_VUE_DATA");
 				$propData->setAccessible(true);
 				$vueDT = $propData->getValue($controller);
@@ -148,20 +145,23 @@ class Core {
 		}
 		
 		if ($HAS_METHOD) {
-			if (isset($vueDT->d) || isset($vueDT->ds)) {
+			if (isset($vueDT->d) || isset($vueDT->ds) || isset($vueDT->rd)) {
 				$INDEX_CONTENT = json_encode($vueDT);
 			}
 		} else {
 			$script = null;
 			if ($APP_CACHED) {
-				$script = 'Vue.processApp("' . $TARGET_NAME . '", null, ' . (isset($vueDT->d) ? json_encode($vueDT->d) : '{}') . ');';
+				$dataComponent = isset($vueDT->d) ? json_encode($vueDT->d) : '{}';
+				$dataRoot = isset($vueDT->rd) ? json_encode($vueDT->rd) : '{}';
+				$script = 'Vue.processApp("' . $TARGET_NAME . '", null, ' . $dataComponent . ', ' . $dataRoot . ');';
 			} else {
 				$url = 'public_html/app/' . $TARGET_NAME . '/' . $TARGET_NAME;
 				$templateURL = $url . '.html';
 				if (file_exists($templateURL)) {
-					$jsonData = isset($vueDT->d) ? json_encode($vueDT->d) : '{}';
+					$dataComponent = isset($vueDT->d) ? json_encode($vueDT->d) : '{}';
+					$dataRoot = isset($vueDT->rd) ? json_encode($vueDT->rd) : '{}';
 					$appURL = $url . '.js';
-					$script = 'Vue.processApp("' . $TARGET_NAME . '",' . json_encode(file_get_contents($templateURL)) . ', ' . $jsonData . ', ' . $methodsList . ', ' . (file_exists($appURL) ? 'function(App) {' . file_get_contents($appURL) . '}' : 'null') . ');';
+					$script = 'Vue.processApp("' . $TARGET_NAME . '",' . json_encode(file_get_contents($templateURL)) . ', ' . $dataComponent . ', ' . $dataRoot . ', ' . $methodsList . ', ' . (file_exists($appURL) ? 'function(App) {' . file_get_contents($appURL) . '}' : 'null') . ');';
 				}
 			}
 			
@@ -178,7 +178,7 @@ class Core {
 		echo $INDEX_CONTENT;
 	}
 
-	private static function hasAccess(TemplateController $controller, String $methodName): bool {
+	private static function hasAccess(ComponentController $controller, String $methodName): bool {
 		$user = Core::getSessionInstance()->getUserPrincipal();
 		if ($user == null) {
 			return false;
@@ -222,11 +222,11 @@ class Core {
 	}
 
 	public static function getSessionInstance(): HttpSession {
-		return $_SESSION[Core::$PROJECT_NAME]['INSTANCE'];
+		return $_SESSION[Project::$name]['INSTANCE'];
 	}
 
 	public static function getSession(): iterable {
-		return $_SESSION[self::$PROJECT_NAME] ?? $_SESSION[self::$PROJECT_NAME] = Array(
+		return $_SESSION[Project::$name] ?? $_SESSION[Project::$name] = Array(
 			'INSTANCE' => new HttpSession()
 		);
 	}

@@ -1,15 +1,15 @@
 <?php
 namespace src\controller;
 
-use fw\TemplateController;
+use fw\ComponentController;
 
-abstract class MainController extends TemplateController {
+abstract class MainController extends ComponentController {
 
 	protected $login;
 
 	protected function init(): void {
 		$this->login = $this->getSession()->getUserPrincipal();
-		$this->setData('logged', $this->login ? true : false);
+		$this->setRootData('logged', $this->login ? true : false);
 	}
 
 	public function logout() {
