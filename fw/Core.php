@@ -3,8 +3,27 @@ namespace fw;
 
 use fw\http\HttpSession;
 use fw\impl\AccessRule;
+use fw\lib\MatthiasMullie\Minify\JS;
+use fw\lib\MatthiasMullie\Minify\CSS;
+use fw\lib\Minify_HTML;
 
 final class Core {
+
+	private const PATH_BUILD = 'build';
+
+	private const PATH_SRC = 'src';
+
+	private const PATH_VIEW = 'public_html';
+
+	private const JS_FILES = Array(
+		'vue',
+		'vue.mixin',
+		'vue.util',
+		'vue.directive',
+		'vue.custom',
+		'events',
+		'crossbrowser'
+	);
 
 	public static function init(): void {
 		spl_autoload_register(function ($class_name) {
@@ -13,7 +32,7 @@ final class Core {
 		
 		session_start();
 		
-		include 'src/project.config.php';
+		include self::PATH_SRC . '/project.config.php';
 		
 		$APP_CACHED = ($_REQUEST['cached'] ?? false) === 'true';
 		$APP_URL = $_REQUEST['url'] ?? Project::$defaultModule;
@@ -36,24 +55,57 @@ final class Core {
 			}
 		}
 		
-		if (! $IS_AJAX) {
-			$INDEX_CONTENT .= '<script type="text/javascript" src="' . $CONTEXT_PATH . 'fw/vue.min.js"></script>';
-			
-			$url = 'public_html/styles.css';
-			if (file_exists($url)) {
-				$INDEX_CONTENT .= '<link rel="stylesheet" type="text/css" href="' . $CONTEXT_PATH . $url . '">';
-			}
-			
-			$INDEX_CONTENT .= file_get_contents('public_html/index.html');
+		if (! file_exists(self::PATH_BUILD)) {
+			mkdir(self::PATH_BUILD, 0777, true);
 		}
 		
-		$srcPath = 'src/controller/' . $TAGET_CLASS_NAME . 'Controller.php';
+		if (! $IS_AJAX) {
+			
+			$lastTime = 0;
+			$js = new JS();
+			
+			foreach (self::JS_FILES as $fileName) {
+				$filePath = 'fw/js/' . $fileName . '.js';
+				$js->add($filePath);
+				
+				$modifiedDate = filemtime($filePath);
+				if ($lastTime < $modifiedDate) {
+					$lastTime = $modifiedDate;
+				}
+			}
+			
+			$filePath = self::PATH_BUILD . '/vue.min.js';
+			if (! file_exists($filePath) || $lastTime > filemtime($filePath)) {
+				$js->minify($filePath);
+			}
+			
+			$INDEX_CONTENT .= '<script type="text/javascript" src="' . $CONTEXT_PATH . self::PATH_BUILD . '/vue.min.js"></script>';
+			
+			$url = self::PATH_VIEW . '/styles.css';
+			if (file_exists($url)) {
+				$filePath = self::PATH_BUILD . '/styles.css';
+				$INDEX_CONTENT .= '<link rel="stylesheet" type="text/css" href="' . $CONTEXT_PATH . $filePath . '">';
+				if (! file_exists($filePath) || filemtime($url) > filemtime($filePath)) {
+					(new CSS($url))->minify($filePath);
+				}
+			}
+			
+			$templateURL = self::PATH_VIEW . '/index.html';
+			$filePath = self::PATH_BUILD . '/index.html';
+			if (! file_exists($filePath) || filemtime($templateURL) > filemtime($filePath)) {
+				Minify_HTML::minifySave($templateURL, $filePath);
+			}
+			
+			$INDEX_CONTENT .= file_get_contents(self::PATH_BUILD . '/index.html');
+		}
+		
+		$srcPath = self::PATH_SRC . '/controller/' . $TAGET_CLASS_NAME . 'Controller.php';
 		$methodsList = $vueDT = '{}';
 		if (file_exists($srcPath)) {
 			$session = self::getSession();
 			
 			$controllerPath = Project::$name . '/controller/' . $TAGET_CLASS_NAME;
-			$className = 'src\controller\\' . $TAGET_CLASS_NAME . 'Controller';
+			$className = self::PATH_SRC . '\controller\\' . $TAGET_CLASS_NAME . 'Controller';
 			
 			$controller = null;
 			$requestedMethod = null;
@@ -155,20 +207,46 @@ final class Core {
 				$dataRoot = isset($vueDT->rd) ? json_encode($vueDT->rd) : '{}';
 				$script = 'Vue.processApp("' . $TARGET_NAME . '", null, ' . $dataComponent . ', ' . $dataRoot . ');';
 			} else {
-				$url = 'public_html/app/' . $TARGET_NAME . '/' . $TARGET_NAME;
+				$appTargetPath = '/app/' . $TARGET_NAME . '/' . $TARGET_NAME;
+				$url = self::PATH_VIEW . $appTargetPath;
 				$templateURL = $url . '.html';
 				if (file_exists($templateURL)) {
+					$filePath = self::PATH_BUILD . $appTargetPath . '.html';
+					if (! file_exists($filePath) || filemtime($templateURL) > filemtime($filePath)) {
+						if (! file_exists(dirname($filePath))) {
+							mkdir(dirname($filePath), 0777, true);
+						}
+						(new JS($templateURL))->minify($filePath);
+					}
+					$templateURL = $filePath;
+					
 					$dataComponent = isset($vueDT->d) ? json_encode($vueDT->d) : '{}';
 					$dataRoot = isset($vueDT->rd) ? json_encode($vueDT->rd) : '{}';
 					$appURL = $url . '.js';
-					$script = 'Vue.processApp("' . $TARGET_NAME . '",' . json_encode(file_get_contents($templateURL)) . ', ' . $dataComponent . ', ' . $dataRoot . ', ' . $methodsList . ', ' . (file_exists($appURL) ? 'function(App) {' . file_get_contents($appURL) . '}' : 'null') . ');';
+					$appJSExist = file_exists($appURL);
+					
+					$filePath = self::PATH_BUILD . $appTargetPath . '.js';
+					if ($appJSExist && (! file_exists($filePath) || filemtime($appURL) > filemtime($filePath))) {
+						if (! file_exists(dirname($filePath))) {
+							mkdir(dirname($filePath), 0777, true);
+						}
+						(new JS($appURL))->minify($filePath);
+					}
+					$appURL = $filePath;
+					
+					$script = 'Vue.processApp("' . $TARGET_NAME . '",' . json_encode(file_get_contents($templateURL)) . ', ' . $dataComponent . ', ' . $dataRoot . ', ' . $methodsList . ', ' . ($appJSExist ? 'function(App) {' . file_get_contents($appURL) . '}' : 'null') . ');';
 				}
 			}
 			
 			if (! $IS_AJAX) {
-				$url = 'public_html/main.js';
+				$url = self::PATH_VIEW . '/main.js';
 				if (file_exists($url)) {
-					$INDEX_CONTENT .= '<script type="text/javascript" src="' . $CONTEXT_PATH . $url . '"></script>';
+					$filePath = self::PATH_BUILD . '/main.js';
+					$INDEX_CONTENT .= '<script type="text/javascript" src="' . $CONTEXT_PATH . $filePath . '"></script>';
+					
+					if (! file_exists($filePath) || filemtime($url) > filemtime($filePath)) {
+						(new JS($url))->minify($filePath);
+					}
 				}
 			}
 			

@@ -3,8 +3,8 @@ namespace fw;
 
 final class Project {
 	
-	public static $name;
+	public static $name = 'VUE_PHP';
 	
-	public static $defaultModule;
+	public static $defaultModule = 'home';
 }
 
