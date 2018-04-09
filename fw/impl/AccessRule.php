@@ -5,4 +5,3 @@ interface AccessRule {
 
 	public static function getRules(): ?Array;
 }
-

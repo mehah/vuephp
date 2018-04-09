@@ -7,7 +7,7 @@ use fw\lib\MatthiasMullie\Minify\JS;
 use fw\lib\MatthiasMullie\Minify\CSS;
 use fw\lib\Minify_HTML;
 
-final class Core {
+abstract class Core {
 
 	private const PATH_BUILD = 'build';
 
@@ -15,17 +15,18 @@ final class Core {
 
 	private const PATH_VIEW = 'public_html';
 
-	private const JS_FILES = Array(
-		'vue',
-		'vue.mixin',
-		'vue.util',
-		'vue.directive',
-		'vue.custom',
-		'events',
-		'crossbrowser'
+	protected static $JS_FILES = Array(
+		'fw/js/events.js',
+		'fw/js/crossbrowser.js',
+		'fw/js/vue.js',
+		'fw/js/vue.mixin.js',
+		'fw/js/vue.util.js',
+		'fw/js/vue.directive.js',
+		'fw/js/vue.custom.js',
+		'fw/js/vue.modalError.js',
 	);
 
-	public static function init(): void {
+	static function init(): void {
 		spl_autoload_register(function ($class_name) {
 			include $class_name . '.php';
 		});
@@ -62,24 +63,24 @@ final class Core {
 		if (! $IS_AJAX) {
 			
 			$lastTime = 0;
-			$js = new JS();
-			
-			foreach (self::JS_FILES as $fileName) {
-				$filePath = 'fw/js/' . $fileName . '.js';
-				$js->add($filePath);
-				
-				$modifiedDate = filemtime($filePath);
+			foreach (self::$JS_FILES as $fileName) {
+				$modifiedDate = filemtime($fileName);
 				if ($lastTime < $modifiedDate) {
 					$lastTime = $modifiedDate;
 				}
 			}
 			
-			$filePath = self::PATH_BUILD . '/vue.min.js';
+			$filePath = self::PATH_BUILD . '/$package.js';
 			if (! file_exists($filePath) || $lastTime > filemtime($filePath)) {
+				$js = new JS();
+				foreach (self::$JS_FILES as $fileName) {
+					$js->add($fileName);
+				}
+				
 				$js->minify($filePath);
 			}
 			
-			$INDEX_CONTENT .= '<script type="text/javascript" src="' . $CONTEXT_PATH . self::PATH_BUILD . '/vue.min.js"></script>';
+			$INDEX_CONTENT .= '<script type="text/javascript" src="' . $CONTEXT_PATH . $filePath . '" charset="' . Project::$chatset . '"></script>';
 			
 			$url = self::PATH_VIEW . '/styles.css';
 			if (file_exists($url)) {
@@ -242,7 +243,7 @@ final class Core {
 				$url = self::PATH_VIEW . '/main.js';
 				if (file_exists($url)) {
 					$filePath = self::PATH_BUILD . '/main.js';
-					$INDEX_CONTENT .= '<script type="text/javascript" src="' . $CONTEXT_PATH . $filePath . '"></script>';
+					$INDEX_CONTENT .= '<script type="text/javascript" src="' . $CONTEXT_PATH . $filePath . '" charset="' . Project::$chatset . '"></script>';
 					
 					if (! file_exists($filePath) || filemtime($url) > filemtime($filePath)) {
 						(new JS($url))->minify($filePath);
@@ -250,7 +251,7 @@ final class Core {
 				}
 			}
 			
-			$INDEX_CONTENT .= $IS_AJAX ? $script : '<script id="!script">Vue.CONTEXT_PATH = ' . $CONTEXT_PATH . ';' . $script . 'document.getElementById("\!script").remove();</script>';
+			$INDEX_CONTENT .= $IS_AJAX ? $script : '<script id="!script">Vue.CONTEXT_PATH = ' . $CONTEXT_PATH . ';Vue.modalError = ' . $CONTEXT_PATH . ';' . $script . 'document.getElementById("\!script").remove();</script>';
 		}
 		
 		echo $INDEX_CONTENT;
@@ -262,7 +263,7 @@ final class Core {
 			return false;
 		}
 		
-		$controllerRules = $controller->getRules();
+		$controllerRules = $controller::getRules();
 		
 		if ($controllerRules && count($controllerRules) > 0) {
 			$rule = $controllerRules[$methodName] ?? null;

@@ -1,3 +1,5 @@
+Vue.use(VeeValidate);
+
 var Modal = new Vue({
 	el : '#modal',
 	components : {

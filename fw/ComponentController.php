@@ -2,33 +2,94 @@
 namespace fw;
 
 use fw\http\HttpSession;
+use fw\validator\Validation;
+use fw\validator\ValidationSetup;
 
 abstract class ComponentController {
 
 	private $_VUE_DATA = null;
 
 	public function __construct() {
-		$this->_VUE_DATA = new \stdClass;
+		$this->_VUE_DATA = new \stdClass();
 	}
 
-	protected function getData(): object {
-		return $this->_VUE_DATA->d ?? ($this->_VUE_DATA->d = new \stdClass);
+	public function getData(): object {
+		return $this->_VUE_DATA->d ?? ($this->_VUE_DATA->d = new \stdClass());
 	}
 
-	protected function setData($name, $value): void {
+	public function setData($name, $value): void {
 		$this->getData()->{$name} = $value;
 	}
-	
-	protected function getRootData(): object {
-		return $this->_VUE_DATA->rd ?? ($this->_VUE_DATA->rd = new \stdClass);
+
+	public function getRootData(): object {
+		return $this->_VUE_DATA->rd ?? ($this->_VUE_DATA->rd = new \stdClass());
 	}
-	
-	protected function setRootData($name, $value): void {
+
+	public function setRootData($name, $value): void {
 		$this->getRootData()->{$name} = $value;
 	}
 
-	protected function getSession(): HttpSession {
+	public function getSession(): HttpSession {
 		return Core::getSessionInstance();
 	}
-}
 
+	public function validate(Validation $object, int $type = ValidationSetup::PARTIAL) {
+		$validation = new ValidationSetup();
+		$object->getValidationSetup($validation);
+		$isPartial = $type === ValidationSetup::PARTIAL;
+		$reflectionClass = new \ReflectionClass($object);
+		
+		$hasError = false;
+		$sharedData = array();
+		foreach ($validation as $nameProp => $validators) {
+			foreach ($validators as $validator) {
+				$validatorClass = new \ReflectionClass($validator->className);
+				
+				$method = $validatorClass->getMethod('validate');
+				$res = $method->invokeArgs(null, array(
+					$this,
+					$object,
+					$nameProp,
+					$object->{$nameProp},
+					$validator->parameters,
+					&$sharedData
+				));
+				
+				if (! $res) {
+					$hasError = true;
+					
+					if ($isPartial) {
+						break;
+					}
+				}
+			}
+			
+			if ($hasError && $isPartial) {
+				break;
+			}
+		}
+		
+		return new \fw\ComponentController\Validation($hasError, $sharedData);
+	}
+}
+namespace fw\ComponentController;
+
+final class Validation {
+
+	private $hasError;
+
+	private $data;
+
+	public function __construct(bool $hasError, array $data) {		
+		$this->hasError = $hasError;
+		$this->data = $data;
+	}
+	
+	public function getData() : array {
+		return $this->data;
+	}
+	
+	public function hasError() : bool {
+		return $this->hasError;
+	}
+}

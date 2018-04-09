@@ -1,6 +1,4 @@
 <?php
-    use fw\Core;
-    
-    include ('fw/Core.php');
-    Core::init();
-?>
+include 'fw/Core.php';
+
+fw\Core::init();

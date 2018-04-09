@@ -10,7 +10,12 @@ class LoginController extends MainController {
 		$this->setData('login', new Login());
 	}
 
-	public function entrar(Login $login): void {
+	public function entrar(Login $login) {
+		$validation = $this->validate($login);
+		if($validation->hasError()) {
+			return $validation->getData();
+		}
+		
 		if ($login->user === "admin" && $login->password === "teste") {
 			$this->getSession()->setUserPrincipal($login);
 			$this->setData('logged', true);
