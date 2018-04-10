@@ -37,6 +37,7 @@ abstract class Core {
 		
 		$APP_CACHED = ($_REQUEST['cached'] ?? false) === 'true';
 		$APP_URL = $_REQUEST['url'] ?? Project::$defaultModule;
+		$ARGUMENTS = $_REQUEST['arg0'] ?? null;
 		$exURL = explode("/", $APP_URL, 3);
 		
 		$CONTEXT_PATH = str_replace('\\', '/', dirname($_SERVER['PHP_SELF'])) . '/';
@@ -50,7 +51,7 @@ abstract class Core {
 		
 		if (isset($exURL[1])) {
 			if (is_numeric($exURL[1])) {
-				$_REQUEST['arg0'] = '[' . $exURL[1] . ']';
+				$ARGUMENTS = '[' . $exURL[1] . ']';
 			} else {
 				$HAS_METHOD = (strlen($exURL[1]) > 0);
 			}
@@ -61,7 +62,6 @@ abstract class Core {
 		}
 		
 		if (! $IS_AJAX) {
-			
 			$lastTime = 0;
 			foreach (self::$JS_FILES as $fileName) {
 				$modifiedDate = filemtime($fileName);
@@ -166,8 +166,8 @@ abstract class Core {
 				$propData->setAccessible(true);
 				$vueDT = $propData->getValue($controller);
 				
-				if (isset($_REQUEST['arg0'])) {
-					$data = json_decode($_REQUEST['arg0']);
+				if ($ARGUMENTS) {
+					$data = json_decode($ARGUMENTS);
 					
 					$params = $reflectionMethod->getParameters();
 					
