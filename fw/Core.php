@@ -23,7 +23,7 @@ abstract class Core {
 		'fw/js/vue.util.js',
 		'fw/js/vue.directive.js',
 		'fw/js/vue.custom.js',
-		'fw/js/vue.modalError.js',
+		'fw/js/vue.modalError.js'
 	);
 
 	static function init(): void {
@@ -177,9 +177,6 @@ abstract class Core {
 						
 						if ($classType && ! $classType->isBuiltin()) {
 							$className = $classType->getName();
-							$reflectionClass = new \ReflectionClass($className);
-							$defaults = $reflectionClass->getDefaultProperties();
-							
 							$arg = new $className();
 							self::setClassProps($data[$i], $arg);
 							
