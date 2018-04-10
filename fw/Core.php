@@ -56,7 +56,7 @@ abstract class Core {
 			}
 		}
 		
-		if (! file_exists(self::PATH_BUILD)) {
+		if (! is_dir(self::PATH_BUILD)) {
 			mkdir(self::PATH_BUILD, 0777, true);
 		}
 		
@@ -71,7 +71,7 @@ abstract class Core {
 			}
 			
 			$filePath = self::PATH_BUILD . '/$package.js';
-			if (! file_exists($filePath) || $lastTime > filemtime($filePath)) {
+			if (! is_file($filePath) || $lastTime > filemtime($filePath)) {
 				$js = new JS();
 				foreach (self::$JS_FILES as $fileName) {
 					$js->add($fileName);
@@ -83,17 +83,17 @@ abstract class Core {
 			$INDEX_CONTENT .= '<script type="text/javascript" src="' . $CONTEXT_PATH . $filePath . '" charset="' . Project::$chatset . '"></script>';
 			
 			$url = self::PATH_VIEW . '/styles.css';
-			if (file_exists($url)) {
+			if (is_file($url)) {
 				$filePath = self::PATH_BUILD . '/styles.css';
 				$INDEX_CONTENT .= '<link rel="stylesheet" type="text/css" href="' . $CONTEXT_PATH . $filePath . '">';
-				if (! file_exists($filePath) || filemtime($url) > filemtime($filePath)) {
+				if (! is_file($filePath) || filemtime($url) > filemtime($filePath)) {
 					(new CSS($url))->minify($filePath);
 				}
 			}
 			
 			$templateURL = self::PATH_VIEW . '/index.html';
 			$filePath = self::PATH_BUILD . '/index.html';
-			if (! file_exists($filePath) || filemtime($templateURL) > filemtime($filePath)) {
+			if (! is_file($filePath) || filemtime($templateURL) > filemtime($filePath)) {
 				Minify_HTML::minifySave($templateURL, $filePath);
 			}
 			
@@ -102,7 +102,7 @@ abstract class Core {
 		
 		$srcPath = self::PATH_SRC . '/controller/' . $TAGET_CLASS_NAME . 'Controller.php';
 		$methodsList = $vueDT = '{}';
-		if (file_exists($srcPath)) {
+		if (is_file($srcPath)) {
 			$session = self::getSession();
 			
 			$controllerPath = Project::$name . '/controller/' . $TAGET_CLASS_NAME;
@@ -211,10 +211,10 @@ abstract class Core {
 				$appTargetPath = '/app/' . $TARGET_NAME . '/' . $TARGET_NAME;
 				$url = self::PATH_VIEW . $appTargetPath;
 				$templateURL = $url . '.html';
-				if (file_exists($templateURL)) {
+				if (is_file($templateURL)) {
 					$filePath = self::PATH_BUILD . $appTargetPath . '.html';
-					if (! file_exists($filePath) || filemtime($templateURL) > filemtime($filePath)) {
-						if (! file_exists(dirname($filePath))) {
+					if (! is_file($filePath) || filemtime($templateURL) > filemtime($filePath)) {
+						if (! is_file(dirname($filePath))) {
 							mkdir(dirname($filePath), 0777, true);
 						}
 						(new JS($templateURL))->minify($filePath);
@@ -224,11 +224,11 @@ abstract class Core {
 					$dataComponent = isset($vueDT->d) ? json_encode($vueDT->d) : '{}';
 					$dataRoot = isset($vueDT->rd) ? json_encode($vueDT->rd) : '{}';
 					$appURL = $url . '.js';
-					$appJSExist = file_exists($appURL);
+					$appJSExist = is_file($appURL);
 					
 					$filePath = self::PATH_BUILD . $appTargetPath . '.js';
-					if ($appJSExist && (! file_exists($filePath) || filemtime($appURL) > filemtime($filePath))) {
-						if (! file_exists(dirname($filePath))) {
+					if ($appJSExist && (! is_file($filePath) || filemtime($appURL) > filemtime($filePath))) {
+						if (! is_dir(dirname($filePath))) {
 							mkdir(dirname($filePath), 0777, true);
 						}
 						(new JS($appURL))->minify($filePath);
@@ -241,11 +241,11 @@ abstract class Core {
 			
 			if (! $IS_AJAX) {
 				$url = self::PATH_VIEW . '/main.js';
-				if (file_exists($url)) {
+				if (is_file($url)) {
 					$filePath = self::PATH_BUILD . '/main.js';
 					$INDEX_CONTENT .= '<script type="text/javascript" src="' . $CONTEXT_PATH . $filePath . '" charset="' . Project::$chatset . '"></script>';
 					
-					if (! file_exists($filePath) || filemtime($url) > filemtime($filePath)) {
+					if (! is_file($filePath) || filemtime($url) > filemtime($filePath)) {
 						(new JS($url))->minify($filePath);
 					}
 				}

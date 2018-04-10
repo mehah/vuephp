@@ -50,7 +50,7 @@ Vue.mixin({
 			}).then(function(data) {
 				data = data.body;
 				
-				if(typeof data === 'string') {
+				if(data && typeof data === 'string') {
 					if(Vue.modalError) {
 						Vue.modalError.show(data);
 					}

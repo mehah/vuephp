@@ -12,7 +12,7 @@ class LoginController extends MainController {
 
 	public function entrar(Login $login) {
 		$validation = $this->validate($login);
-		if($validation->hasError()) {
+		if ($validation->hasError()) {
 			return $validation->getData();
 		}
 		
