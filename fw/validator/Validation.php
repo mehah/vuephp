@@ -3,6 +3,6 @@ namespace fw\validator;
 
 interface Validation {
 
-	public static function getValidationSetup(ValidationSetup $setup): void;
+	public static function validationSetup(ValidationSetup $setup): void;
 }
 

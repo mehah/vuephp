@@ -214,8 +214,9 @@ abstract class Core {
 				if (is_file($templateURL)) {
 					$filePath = self::PATH_BUILD . $appTargetPath . '.html';
 					if (! is_file($filePath) || filemtime($templateURL) > filemtime($filePath)) {
-						if (! is_file(dirname($filePath))) {
-							mkdir(dirname($filePath), 0777, true);
+						$dir = dirname($filePath);
+						if (! is_dir($dir)) {
+							mkdir($dir, 0777, true);
 						}
 						(new JS($templateURL))->minify($filePath);
 					}
@@ -228,8 +229,9 @@ abstract class Core {
 					
 					$filePath = self::PATH_BUILD . $appTargetPath . '.js';
 					if ($appJSExist && (! is_file($filePath) || filemtime($appURL) > filemtime($filePath))) {
-						if (! is_dir(dirname($filePath))) {
-							mkdir(dirname($filePath), 0777, true);
+						$dir = dirname($filePath);
+						if (! is_dir($dir)) {
+							mkdir($dir, 0777, true);
 						}
 						(new JS($appURL))->minify($filePath);
 					}
@@ -251,7 +253,7 @@ abstract class Core {
 				}
 			}
 			
-			$INDEX_CONTENT .= $IS_AJAX ? $script : '<script id="!script">Vue.CONTEXT_PATH = ' . $CONTEXT_PATH . ';Vue.modalError = ' . $CONTEXT_PATH . ';' . $script . 'document.getElementById("\!script").remove();</script>';
+			$INDEX_CONTENT .= $IS_AJAX ? $script : '<script id="!script">Vue.CONTEXT_PATH = ' . $CONTEXT_PATH . ';' . $script . 'document.getElementById("\!script").remove();</script>';
 		}
 		
 		echo $INDEX_CONTENT;

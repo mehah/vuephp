@@ -2,7 +2,7 @@
 namespace fw\database;
 
 abstract class Entity {
-
+	
 	public function load(): bool {
 		return DatabaseEntity::load($this);
 	}

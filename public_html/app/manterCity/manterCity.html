@@ -1,0 +1,7 @@
+<div>
+	<div>
+		<label for="name">Name</label> <input v-model.trim="entity.name" />
+	</div>
+</div>
+<button @click="manter">{{entity.id ? 'Alterar' : 'Cadastrar'}}</button>
+<button @click="goback">Voltar</button>

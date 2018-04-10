@@ -18,7 +18,7 @@ class Login implements UserPrincipal, Validation {
 		);
 	}
 
-	public static function getValidationSetup(ValidationSetup $setup): void {
+	public static function validationSetup(ValidationSetup $setup): void {
 		$setup
 			->register('user', RequiredValidator::class)
 			->register('password', RequiredValidator::class);

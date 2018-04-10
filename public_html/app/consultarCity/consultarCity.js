@@ -14,16 +14,16 @@ this.methods.selecionarTodos = function(e) {
 
 this.methods.remover = function(entity) {
 	var $this = this;
-	Modal.messageConfirm("Tem certeza que deseja remover o usuário '"+entity.name+"'?", function() {
+	Modal.messageConfirm("Tem certeza que deseja remover a cidade '"+entity.name+"'?", function() {
 		$this.$deletar(entity, function(deleted) {
 			var msg;
 			if(deleted) {
-				msg = "Usuário '" + entity.name + "' removido com sucesso";
+				msg = "Cidade '" + entity.name + "' removido com sucesso";
 				this.entitys = this.entitys.filter(function (item) {
 				    return entity.id !== item.id;
 				});
 			} else {
-				msg = "Erro ao tentar remover o usuário '" + entity.name + "'.";
+				msg = "Erro ao tentar remover a cidade '" + entity.name + "'.";
 			}
 			Modal.message(msg);
 		});
@@ -32,7 +32,7 @@ this.methods.remover = function(entity) {
 
 this.methods.deletarTodos = function() {
 	if(this.entitysCheckeds.length === 0) {
-		Modal.message('Selecione pelo menos um usuário.');
+		Modal.message('Selecione pelo menos uma cidade.');
 		return;
 	}
 	

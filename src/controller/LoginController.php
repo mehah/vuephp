@@ -11,9 +11,8 @@ class LoginController extends MainController {
 	}
 
 	public function entrar(Login $login) {
-		$validation = $this->validate($login);
-		if ($validation->hasError()) {
-			return $validation->getData();
+		if ($this->validate($login)->hasError()) {
+			return;
 		}
 		
 		if ($login->user === "admin" && $login->password === "teste") {

@@ -1,17 +1,17 @@
 <div>
 	<div>
-		<label for="name">Name</label> <input v-model.trim="user.name" />
+		<label for="name">Name</label> <input v-model.trim="entity.name" />
 	</div>
 	<div>
 		<label for="name">Sex </label>
-		<input type="radio" :value="0" v-model="user.sex" /> Female <input type="radio" :value="1" v-model="user.sex" /> Masculine
+		<input type="radio" :value="0" v-model="entity.sex" /> Female <input type="radio" :value="1" v-model="entity.sex" /> Masculine
 	</div>
 	<div>
 		<label for="name">City</label>
-		<select name="city" v-model="user.city.id">
+		<select name="city" v-model="entity.city.id">
 			<option v-for="city in citys" v-bind:value="city.id">{{ city.name }}</option>
 		</select>
 	</div>
 </div>
-<button @click="manter">{{user.id ? 'Alterar' : 'Cadastrar'}}</button>
+<button @click="manter">{{entity.id ? 'Alterar' : 'Cadastrar'}}</button>
 <button @click="goback">Voltar</button>

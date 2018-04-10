@@ -35,26 +35,14 @@ abstract class ComponentController {
 
 	public function validate(Validation $object, int $type = ValidationSetup::PARTIAL) {
 		$validation = new ValidationSetup();
-		$object->getValidationSetup($validation);
+		$object->validationSetup($validation);
 		$isPartial = $type === ValidationSetup::PARTIAL;
-		$reflectionClass = new \ReflectionClass($object);
 		
 		$hasError = false;
 		$sharedData = array();
 		foreach ($validation as $nameProp => $validators) {
 			foreach ($validators as $validator) {
-				$validatorClass = new \ReflectionClass($validator->className);
-				
-				$method = $validatorClass->getMethod('validate');
-				$res = $method->invokeArgs(null, array(
-					$this,
-					$object,
-					$nameProp,
-					$object->{$nameProp},
-					$validator->parameters,
-					&$sharedData
-				));
-				
+				$res = ($validator->className)::validate($this, $object, $nameProp, $object->{$nameProp}, $validator->parameters, $sharedData);
 				if (! $res) {
 					$hasError = true;
 					
@@ -80,16 +68,16 @@ final class Validation {
 
 	private $data;
 
-	public function __construct(bool $hasError, array $data) {		
+	public function __construct(bool $hasError, array $data) {
 		$this->hasError = $hasError;
 		$this->data = $data;
 	}
-	
-	public function getData() : array {
+
+	public function getData(): array {
 		return $this->data;
 	}
-	
-	public function hasError() : bool {
+
+	public function hasError(): bool {
 		return $this->hasError;
 	}
 }
