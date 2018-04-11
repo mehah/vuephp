@@ -28,7 +28,7 @@ abstract class Core {
 
 	static function init(): void {
 		spl_autoload_register(function ($class_name) {
-			include $class_name . '.php';
+			include str_replace('\\', '/', $class_name) . '.php';
 		});
 		
 		include self::PATH_SRC . '/project.config.php';

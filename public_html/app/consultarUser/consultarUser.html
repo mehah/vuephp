@@ -12,7 +12,7 @@
 			<td><input type="checkbox" v-model="entitysCheckeds" :value="entity" /></td>
 			<td>{{entity.name}}</td>
 			<td>{{entity.email}}</td>
-			<td><a v-goto:manterUser="entity.id">Alterar</a> <a href="#" @click.prevent="remover(entity)">Remover</a></td>
+			<td><a v-goto="'manterUser/'+entity.id">Alterar</a> <a href="#" @click.prevent="remover(entity)">Remover</a></td>
 		</tr>
 	</tbody>
 </table>
