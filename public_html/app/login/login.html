@@ -1,8 +1,7 @@
 <div>
-	<label for="name">Name</label> <input name="name" v-model.trim="login.user" v-validate="'required'" />
-	<span v-show="errors.has('name')">{{ errors.first('name') }}</span>
+	<label for="name">Name</label> <input name="name" v-model.trim="login.user" />
 </div>
 <div>
-	<label for="password">Password </label> <input name="password" type="password" v-model="login.password" v-validate="'required'" />
+	<label for="password">Password </label> <input name="password" type="password" v-model="login.password" />
 </div>
 <button @click="entrar()">Entrar</button>

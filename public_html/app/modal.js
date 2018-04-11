@@ -1,6 +1,4 @@
-Vue.use(VeeValidate);
-
-var Modal = new Vue({
+window.Modal = new Vue({
 	el : '#modal',
 	components : {
 		'modal' : {
@@ -43,20 +41,6 @@ var Modal = new Vue({
 			if (this.onConfirm) {
 				this.onConfirm.call(this);
 			}
-		}
-	}
-});
-
-Vue.mixin({
-	methods : {
-		logout : function() {
-			var currentApp = this.$children[0];
-			Modal.messageConfirm("Tem certeza que deseja sair?", function() {
-				currentApp.$logout(function() {
-					this.logged = false;
-					this.redirect('home');
-				});
-			});
 		}
 	}
 });

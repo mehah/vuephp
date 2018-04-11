@@ -58,12 +58,13 @@ abstract class Core {
 		
 		session_start();
 		
-		$ARGUMENTS = $_REQUEST['arg0'] ?? null;
+		$ARGUMENTS = $_REQUEST['args'] ?? null;
 		
 		$CONTEXT_PATH = str_replace('\\', '/', dirname($_SERVER['PHP_SELF'])) . '/';
 		$HAS_METHOD = false;
 		
-		$IS_AJAX = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && ! empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+		$httpX = $_SERVER['HTTP_X_REQUESTED_WITH'] ?? null;
+		$IS_AJAX = $httpX && strtolower($httpX) === 'xmlhttprequest';
 		
 		if (isset($exURL[1])) {
 			if (is_numeric($exURL[1])) {
@@ -78,32 +79,37 @@ abstract class Core {
 		}
 		
 		if (! $IS_AJAX) {
+			$packageBuildPath = self::PATH_BUILD . '/$package.js';
 			$lastTime = 0;
 			foreach (self::$JS_FILES as $fileName) {
+				if (strpos($fileName, ':') === 0) {
+					$fileName = substr($fileName, 1);
+				}
 				$modifiedDate = filemtime($fileName);
 				if ($lastTime < $modifiedDate) {
 					$lastTime = $modifiedDate;
 				}
 			}
 			
-			$packageBuildPath = self::PATH_BUILD . '/$package.js';
 			if (! is_file($packageBuildPath) || $lastTime > filemtime($packageBuildPath)) {
 				$js = new JS();
 				foreach (self::$JS_FILES as $fileName) {
+					$loadEvent = strpos($fileName, ':') === 0;
+					if ($loadEvent) {
+						$js->add('document.addEventListener("DOMContentLoaded", function(event) {');
+						$fileName = substr($fileName, 1);
+					}
+					
 					$js->add($fileName);
+					
+					if ($loadEvent) {
+						$js->add('});');
+					}
 				}
 				
 				$js->add('Vue.CONTEXT_PATH = "' . $CONTEXT_PATH . '";');
+				
 				$js->minify($packageBuildPath);
-			}
-			
-			$mainViewPath = self::PATH_VIEW . '/main.js';
-			$mainBuildPath = self::PATH_BUILD . '/main.js';
-			$hasMainFile = is_file($mainViewPath);
-			if ($hasMainFile) {
-				if (! is_file($mainBuildPath) || filemtime($mainViewPath) > filemtime($mainBuildPath)) {
-					(new JS($mainViewPath))->minify($mainBuildPath);
-				}
 			}
 			
 			$styleViewPath = self::PATH_VIEW . '/styles.css';
@@ -124,12 +130,7 @@ abstract class Core {
 					$prependScriptHTML .= '<link rel="stylesheet" type="text/css" href="' . $CONTEXT_PATH . $styleBuildPath . '"></link>';
 				}
 				
-				$appendScriptHTML = '';
-				if ($hasMainFile) {
-					$appendScriptHTML = '<script type="text/javascript" src="' . $CONTEXT_PATH . $mainBuildPath . '" charset="' . Project::$chatset . '"></script>';
-				}
-				
-				Minify_HTML::minifySave($templateViewPath, $templateBuildPath, $prependScriptHTML, $appendScriptHTML);
+				Minify_HTML::minifySave($templateViewPath, $templateBuildPath, $prependScriptHTML);
 			}
 			
 			readfile($templateBuildPath);
@@ -168,12 +169,12 @@ abstract class Core {
 			$methodsList = '';
 			
 			if (! $APP_CACHED) {
-				$controllerBuildPath = self::PATH_BUILD . $appTargetPath . '.methods.js';				
+				$controllerBuildPath = self::PATH_BUILD . $appTargetPath . '.methods.js';
 				if (! is_file($controllerBuildPath) || filemtime($controllerPath) > filemtime($controllerBuildPath)) {
 					$methods = $reflectionClass->getMethods(\ReflectionMethod::IS_PUBLIC);
 					foreach ($methods as $method) {
 						$methodName = $method->getName();
-						if ($method->isStatic() || $methodName === 'init' || $methodName === '__construct') {
+						if ($method->isStatic() || $methodName === 'init' || $methodName === '__construct' || $method->getDeclaringClass()->getName() === ComponentController::class) {
 							continue;
 						}
 						
@@ -269,7 +270,7 @@ abstract class Core {
 			}
 		}
 	}
-	
+
 	private static function checkDir(string $path) {
 		$dir = dirname($path);
 		if (! is_dir($dir)) {

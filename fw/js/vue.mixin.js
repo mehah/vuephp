@@ -8,7 +8,7 @@ Vue.mixin({
 			if (param) {
 				if (typeof param === 'object') {
 					param = {
-						arg0: JSON.stringify([param])
+						args: JSON.stringify([param])
 					};
 				} else {
 					url += '/' + param;
@@ -44,7 +44,7 @@ Vue.mixin({
 			}
 
 			this.$http.post(url, {
-				arg0: JSON.stringify(params)
+				args: JSON.stringify(params)
 			}, {
 				emulateJSON: true
 			}).then(function(data) {
