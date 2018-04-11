@@ -13,7 +13,7 @@ final class DatabaseEntity {
 		if ($res) {
 			$list = Array();
 			while ($entityDB = $stmt->fetchObject($className)) {
-				array_push($list, $entityDB);
+				$list[] = $entityDB;
 			}
 			
 			return $list;
@@ -109,7 +109,7 @@ final class DatabaseEntity {
 			$fields .= '`' . $name . '`';
 			$params .= '?';
 			
-			array_push($values, $value);
+			$values[] = $value;
 		}
 		
 		$stmt = $conn->prepare('INSERT INTO `' . $entity::$table . '`(' . $fields . ') VALUES (' . $params . ')');
@@ -152,7 +152,7 @@ final class DatabaseEntity {
 			
 			$fields .= '`' . $name . '`=?';
 			
-			array_push($values, $value);
+			$values[] = $value;
 		}
 		
 		$stmt = $conn->prepare('UPDATE `' . $tableName . '` SET ' . $fields . ' WHERE `' . $primaryKey . '` = ?');
