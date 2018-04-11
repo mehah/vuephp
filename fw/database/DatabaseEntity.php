@@ -53,7 +53,7 @@ final class DatabaseEntity {
 			$props = (new \ReflectionClass($entity))->getProperties();
 			foreach ($props as $prop) {
 				$name = $prop->getName();
-				if ($prop->isStatic() || $name == 'class') {
+				if ($prop->isStatic() || $name === 'class') {
 					continue;
 				}
 				
@@ -65,7 +65,7 @@ final class DatabaseEntity {
 					$propsRel = (new \ReflectionClass($entityRel))->getProperties();
 					foreach ($propsRel as $propRel) {
 						$nameRel = $propRel->getName();
-						if ($propRel->isStatic() || $nameRel == 'class') {
+						if ($propRel->isStatic() || $nameRel === 'class') {
 							continue;
 						}
 						
@@ -91,7 +91,7 @@ final class DatabaseEntity {
 		$props = (new \ReflectionClass($entity))->getProperties();
 		foreach ($props as $prop) {
 			$name = $prop->getName();
-			if ($prop->isStatic() || $name == 'class') {
+			if ($prop->isStatic() || $name === 'class') {
 				continue;
 			}
 			
@@ -136,7 +136,7 @@ final class DatabaseEntity {
 		$props = (new \ReflectionClass($entity))->getProperties();
 		foreach ($props as $prop) {
 			$name = $prop->getName();
-			if ($prop->isStatic() || $name == 'class' || $name == $primaryKey) {
+			if ($prop->isStatic() || $name === 'class' || $name === $primaryKey) {
 				continue;
 			}
 			
@@ -178,7 +178,7 @@ final class DatabaseEntity {
 	}
 
 	public static function deleteWithFilter(string $className, Array $fieldsFilter): bool {
-		if (! $fieldsFilter || count($fieldsFilter) == 0) {
+		if (! $fieldsFilter || count($fieldsFilter) === 0) {
 			throw new \Exception("Não foi definido os campos para filtro.");
 		}
 		

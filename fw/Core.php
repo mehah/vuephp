@@ -3,9 +3,9 @@ namespace fw;
 
 use fw\http\HttpSession;
 use fw\impl\AccessRule;
-use fw\lib\MatthiasMullie\Minify\JS;
-use fw\lib\MatthiasMullie\Minify\CSS;
 use fw\lib\Minify_HTML;
+use fw\lib\MatthiasMullie\Minify\CSS;
+use fw\lib\MatthiasMullie\Minify\JS;
 
 abstract class Core {
 
@@ -41,8 +41,8 @@ abstract class Core {
 		$TARGET_NAME = $exURL[0];
 		$TAGET_CLASS_NAME = ucfirst($TARGET_NAME);
 		
-		$srcPath = self::PATH_SRC . '/controller/' . $TAGET_CLASS_NAME . 'Controller.php';
-		$controllerExist = is_file($srcPath);
+		$controllerPath = self::PATH_SRC . '/controller/' . $TAGET_CLASS_NAME . 'Controller.php';
+		$controllerExist = is_file($controllerPath);
 		
 		if (! $APP_CACHED) {
 			$appTargetPath = '/app/' . $TARGET_NAME . '/' . $TARGET_NAME;
@@ -51,7 +51,7 @@ abstract class Core {
 			$appPathHTMLExist = is_file($appPathHTML);
 			
 			if (! $controllerExist || ! $appPathHTMLExist) {
-				http_response_code(404);				
+				http_response_code(404);
 				exit('PAGE NOT FOUND');
 			}
 		}
@@ -63,8 +63,7 @@ abstract class Core {
 		$CONTEXT_PATH = str_replace('\\', '/', dirname($_SERVER['PHP_SELF'])) . '/';
 		$HAS_METHOD = false;
 		
-		$INDEX_CONTENT = '';
-		$IS_AJAX = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && ! empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
+		$IS_AJAX = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && ! empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 		
 		if (isset($exURL[1])) {
 			if (is_numeric($exURL[1])) {
@@ -87,34 +86,53 @@ abstract class Core {
 				}
 			}
 			
-			$fileBuildPath = self::PATH_BUILD . '/$package.js';
-			if (! is_file($fileBuildPath) || $lastTime > filemtime($fileBuildPath)) {
+			$packageBuildPath = self::PATH_BUILD . '/$package.js';
+			if (! is_file($packageBuildPath) || $lastTime > filemtime($packageBuildPath)) {
 				$js = new JS();
 				foreach (self::$JS_FILES as $fileName) {
 					$js->add($fileName);
 				}
 				
-				$js->minify($fileBuildPath);
+				$js->add('Vue.CONTEXT_PATH = "' . $CONTEXT_PATH . '";');
+				$js->minify($packageBuildPath);
 			}
 			
-			$INDEX_CONTENT .= '<script type="text/javascript" src="' . $CONTEXT_PATH . $fileBuildPath . '" charset="' . Project::$chatset . '"></script>';
-			
-			$url = self::PATH_VIEW . '/styles.css';
-			if (is_file($url)) {
-				$fileBuildPath = self::PATH_BUILD . '/styles.css';
-				$INDEX_CONTENT .= '<link rel="stylesheet" type="text/css" href="' . $CONTEXT_PATH . $fileBuildPath . '">';
-				if (! is_file($fileBuildPath) || filemtime($url) > filemtime($fileBuildPath)) {
-					(new CSS($url))->minify($fileBuildPath);
+			$mainViewPath = self::PATH_VIEW . '/main.js';
+			$mainBuildPath = self::PATH_BUILD . '/main.js';
+			$hasMainFile = is_file($mainViewPath);
+			if ($hasMainFile) {
+				if (! is_file($mainBuildPath) || filemtime($mainViewPath) > filemtime($mainBuildPath)) {
+					(new JS($mainViewPath))->minify($mainBuildPath);
 				}
 			}
 			
-			$templateURL = self::PATH_VIEW . '/index.html';
-			$fileBuildPath = self::PATH_BUILD . '/index.html';
-			if (! is_file($fileBuildPath) || filemtime($templateURL) > filemtime($fileBuildPath)) {
-				Minify_HTML::minifySave($templateURL, $fileBuildPath);
+			$styleViewPath = self::PATH_VIEW . '/styles.css';
+			$styleBuildPath = self::PATH_BUILD . '/styles.css';
+			$hasStyleFile = is_file($styleViewPath);
+			if ($hasStyleFile) {
+				if (! is_file($styleBuildPath) || filemtime($styleViewPath) > filemtime($styleBuildPath)) {
+					(new CSS($styleViewPath))->minify($styleBuildPath);
+				}
 			}
 			
-			$INDEX_CONTENT .= file_get_contents(self::PATH_BUILD . '/index.html');
+			$templateViewPath = self::PATH_VIEW . '/index.html';
+			$templateBuildPath = self::PATH_BUILD . '/index.html';
+			if (! is_file($templateBuildPath) || filemtime($templateViewPath) > filemtime($templateBuildPath)) {
+				$prependScriptHTML = '<script type="text/javascript" src="' . $CONTEXT_PATH . $packageBuildPath . '" charset="' . Project::$chatset . '"></script>';
+				
+				if ($hasStyleFile) {
+					$prependScriptHTML .= '<link rel="stylesheet" type="text/css" href="' . $CONTEXT_PATH . $styleBuildPath . '"></link>';
+				}
+				
+				$appendScriptHTML = '';
+				if ($hasMainFile) {
+					$appendScriptHTML = '<script type="text/javascript" src="' . $CONTEXT_PATH . $mainBuildPath . '" charset="' . Project::$chatset . '"></script>';
+				}
+				
+				Minify_HTML::minifySave($templateViewPath, $templateBuildPath, $prependScriptHTML, $appendScriptHTML);
+			}
+			
+			readfile($templateBuildPath);
 		}
 		
 		$methodsList = $vueDT = '{}';
@@ -141,7 +159,7 @@ abstract class Core {
 			}
 			
 			if ($controller instanceof AccessRule && ! self::hasAccess($controller, $requestedMethod)) {
-				header('HTTP/1.1 401 Unauthorized');
+				http_response_code(401);
 				die('Você não está autorizado a executar essa ação.');
 			}
 			
@@ -150,26 +168,33 @@ abstract class Core {
 			$methodsList = '';
 			
 			if (! $APP_CACHED) {
-				$methods = $reflectionClass->getMethods(\ReflectionMethod::IS_PUBLIC);
-				foreach ($methods as $method) {
-					$methodName = $method->getName();
-					if ($method->isStatic() || $methodName == 'init' || $methodName == '__construct') {
-						continue;
+				$controllerBuildPath = self::PATH_BUILD . $appTargetPath . '.methods.js';				
+				if (! is_file($controllerBuildPath) || filemtime($controllerPath) > filemtime($controllerBuildPath)) {
+					$methods = $reflectionClass->getMethods(\ReflectionMethod::IS_PUBLIC);
+					foreach ($methods as $method) {
+						$methodName = $method->getName();
+						if ($method->isStatic() || $methodName === 'init' || $methodName === '__construct') {
+							continue;
+						}
+						
+						if ($methodsList) {
+							$methodsList .= ',';
+						}
+						
+						$countParam = $method->getNumberOfParameters() + 97;
+						$args = '';
+						for ($i = 96; ++ $i < $countParam;) {
+							$args .= chr($i) . ',';
+						}
+						
+						$methodsList .= '$' . $methodName . ':function(' . $args . 'z){this.request("' . $CONTEXT_PATH . $TARGET_NAME . '/' . $methodName . '", ' . $args . 'z);}';
 					}
+					$methodsList = '{' . $methodsList . '}';
 					
-					if ($methodsList) {
-						$methodsList .= ',';
-					}
-					
-					$countParam = $method->getNumberOfParameters() + 97;
-					$args = '';
-					for ($i = 96; ++ $i < $countParam;) {
-						$args .= chr($i) . ',';
-					}
-					
-					$methodsList .= '$' . $methodName . ':function(' . $args . 'z){this.request("' . $CONTEXT_PATH . $TARGET_NAME . '/' . $methodName . '", ' . $args . 'z);}';
+					file_put_contents($controllerBuildPath, $methodsList);
+				} else {
+					$methodsList = file_get_contents($controllerBuildPath);
 				}
-				$methodsList = '{' . $methodsList . '}';
 			}
 			
 			if ($reflectionClass->hasMethod($requestedMethod)) {
@@ -209,14 +234,13 @@ abstract class Core {
 		
 		if ($HAS_METHOD) {
 			if ($vueDT->d ?? $vueDT->ds ?? $vueDT->rd ?? null) {
-				$INDEX_CONTENT = json_encode($vueDT);
+				echo json_encode($vueDT);
 			}
 		} else {
-			$script = null;
 			if ($APP_CACHED) {
 				$dataComponent = isset($vueDT->d) ? json_encode($vueDT->d) : '{}';
 				$dataRoot = isset($vueDT->rd) ? json_encode($vueDT->rd) : '{}';
-				$script = 'Vue.processApp("' . $TARGET_NAME . '", null, ' . $dataComponent . ', ' . $dataRoot . ');';
+				echo 'Vue.processApp("' . $TARGET_NAME . '", null, ' . $dataComponent . ', ' . $dataRoot . ');';
 			} else {
 				if ($appPathHTMLExist) {
 					$fileBuildPath = self::PATH_BUILD . $appTargetPath . '.html';
@@ -245,30 +269,15 @@ abstract class Core {
 					$dataComponent = isset($vueDT->d) ? json_encode($vueDT->d) : '{}';
 					$dataRoot = isset($vueDT->rd) ? json_encode($vueDT->rd) : '{}';
 					$script = 'Vue.processApp("' . $TARGET_NAME . '",' . json_encode(file_get_contents($appPathHTML)) . ', ' . $dataComponent . ', ' . $dataRoot . ', ' . $methodsList . ', ' . ($appJSExist ? 'function(App) {' . file_get_contents($appURL) . '}' : 'null') . ');';
+					echo $IS_AJAX ? $script : '<script>' . $script . '</script>';
 				}
 			}
-			
-			if (! $IS_AJAX) {
-				$url = self::PATH_VIEW . '/main.js';
-				if (is_file($url)) {
-					$fileBuildPath = self::PATH_BUILD . '/main.js';
-					$INDEX_CONTENT .= '<script type="text/javascript" src="' . $CONTEXT_PATH . $fileBuildPath . '" charset="' . Project::$chatset . '"></script>';
-					
-					if (! is_file($fileBuildPath) || filemtime($url) > filemtime($fileBuildPath)) {
-						(new JS($url))->minify($fileBuildPath);
-					}
-				}
-			}
-			
-			$INDEX_CONTENT .= $IS_AJAX ? $script : '<script id="!script">Vue.CONTEXT_PATH = ' . $CONTEXT_PATH . ';' . $script . 'document.getElementById("\!script").remove();</script>';
 		}
-		
-		echo $INDEX_CONTENT;
 	}
 
 	private static function hasAccess(ComponentController $controller, String $methodName): bool {
-		$user = Core::getSessionInstance()->getUserPrincipal();
-		if ($user == null) {
+		$user = $controller->getSession()->getUserPrincipal();
+		if ($user === null) {
 			return false;
 		}
 		
@@ -276,7 +285,7 @@ abstract class Core {
 		
 		if ($controllerRules && count($controllerRules) > 0) {
 			$rule = $controllerRules[$methodName] ?? null;
-			if ($rule && $rule !== "*") {
+			if ($rule && $rule !== '*') {
 				$userRules = $user->getRules();
 				if ($userRules) {
 					foreach ($userRules as $v) {

@@ -26,13 +26,13 @@ class Minify_HTML {
 	 *        	
 	 * @return string
 	 */
-	public static function minify($html, $options = array()) {
+	public static function minify(string $html, array $options = array()) {
 		$min = new self($html, $options);
 		return $min->process();
 	}
 
-	public static function minifySave($path, $pathSave) {
-		$min = new self(file_get_contents($path));
+	public static function minifySave(string $path, string $pathSave, string $prepend = '', string $append = '') {
+		$min = new self($prepend.file_get_contents($path).$append);
 		file_put_contents($pathSave, $min->process());
 	}
 

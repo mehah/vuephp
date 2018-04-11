@@ -11,7 +11,7 @@ final class DateValidator implements Validator {
 
 	public function validate(ComponentController $controller, $entity, $name, $value, array $parameters, array &$sharedData) {
 		$d = DateTime::createFromFormat(self::FORMAT, $value);
-		return $d && $d->format(self::FORMAT) == $value;
+		return $d && $d->format(self::FORMAT) === $value;
 	}
 }
 
