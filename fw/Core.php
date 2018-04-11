@@ -191,6 +191,7 @@ abstract class Core {
 					}
 					$methodsList = '{' . $methodsList . '}';
 					
+					self::checkDir($controllerBuildPath);
 					file_put_contents($controllerBuildPath, $methodsList);
 				} else {
 					$methodsList = file_get_contents($controllerBuildPath);
@@ -245,10 +246,7 @@ abstract class Core {
 				if ($appPathHTMLExist) {
 					$fileBuildPath = self::PATH_BUILD . $appTargetPath . '.html';
 					if (! is_file($fileBuildPath) || filemtime($appPathHTML) > filemtime($fileBuildPath)) {
-						$dir = dirname($fileBuildPath);
-						if (! is_dir($dir)) {
-							mkdir($dir, 0777, true);
-						}
+						self::checkDir($fileBuildPath);
 						(new JS($appPathHTML))->minify($fileBuildPath);
 					}
 					$appPathHTML = $fileBuildPath;
@@ -258,10 +256,7 @@ abstract class Core {
 					
 					$fileBuildPath = self::PATH_BUILD . $appTargetPath . '.js';
 					if ($appJSExist && (! is_file($fileBuildPath) || filemtime($appURL) > filemtime($fileBuildPath))) {
-						$dir = dirname($fileBuildPath);
-						if (! is_dir($dir)) {
-							mkdir($dir, 0777, true);
-						}
+						self::checkDir($fileBuildPath);
 						(new JS($appURL))->minify($fileBuildPath);
 					}
 					$appURL = $fileBuildPath;
@@ -272,6 +267,13 @@ abstract class Core {
 					echo $IS_AJAX ? $script : '<script>' . $script . '</script>';
 				}
 			}
+		}
+	}
+	
+	private static function checkDir(string $path) {
+		$dir = dirname($path);
+		if (! is_dir($dir)) {
+			mkdir($dir, 0777, true);
 		}
 	}
 
