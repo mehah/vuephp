@@ -1,13 +1,16 @@
 Vue.liveView = {
-	id: 0,
-	checkModification: function(app) {
-		Vue.http.get(Vue.CONTEXT_PATH + 'check?app=' + app).then(function(data) {
-			if(data.body) {
-				location.reload();  
-			} else {
-				Vue.liveView.id = setTimeout(function() {
-					Vue.liveView.checkModification(app);
-				}, 1000);
+	checkModification : function(app) {
+		Vue.http.get(Vue.CONTEXT_PATH + 'check?app=' + app, {
+			before : function(request) {
+				if (this.previousRequest) {
+					this.previousRequest.abort();
+				}
+
+				this.previousRequest = request;
+			}
+		}).then(function(data) {
+			if (data.body) {
+				location.reload();
 			}
 		});
 	}

@@ -38,7 +38,14 @@ abstract class Core {
 		$APP_URL = $_REQUEST['url'] ?? Project::$defaultModule;
 		
 		if(Project::liveViewEnabled() && $APP_URL === 'check') {
-			die(self::hasModification($_REQUEST['app'] ?? Project::$defaultModule));
+			set_time_limit(0);
+			while(!self::hasModification($_REQUEST['app'] ?? Project::$defaultModule)) {
+				if(connection_aborted()) {
+					exit;
+				}
+				usleep(500000);
+			}
+			exit('1');
 		}
 		
 		$exURL = explode("/", $APP_URL, 3);

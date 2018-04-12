@@ -25,7 +25,6 @@ Vue.mixin({
 				emulateJSON: true
 			}).then(function(data) {
 				if(Vue.liveView) {
-					clearTimeout(Vue.liveView.id);
 					Vue.liveView.checkModification(appName);
 				}
 				
