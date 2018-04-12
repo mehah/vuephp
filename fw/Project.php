@@ -27,5 +27,9 @@ final class Project extends Core {
 	public static function registerJavascript(String $path): void {
 		self::$JS_FILES[] = ':public_html/'.$path;
 	}
+	
+	public static function importCSS(String $path): void {
+		self::$CSS_FILES[] = 'public_html/'.$path;
+	}
 }
 

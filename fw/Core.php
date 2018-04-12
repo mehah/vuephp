@@ -26,6 +26,8 @@ abstract class Core {
 		'fw/js/vue.modalError.js'
 	);
 
+	protected static $CSS_FILES = Array();
+
 	static function init(): void {
 		spl_autoload_register(function ($class_name) {
 			include str_replace('\\', '/', $class_name) . '.php';
@@ -37,11 +39,11 @@ abstract class Core {
 		
 		$APP_URL = $_REQUEST['url'] ?? Project::$defaultModule;
 		
-		if(Project::liveViewEnabled() && $APP_URL === 'check') {
+		if (Project::liveViewEnabled() && $APP_URL === 'check') {
 			set_time_limit(0);
-			while(!self::hasModification($_REQUEST['app'] ?? Project::$defaultModule)) {
-				if(connection_aborted()) {
-					exit;
+			while (! self::hasModification($_REQUEST['app'] ?? Project::$defaultModule)) {
+				if (connection_aborted()) {
+					exit();
 				}
 				usleep(500000);
 			}
@@ -91,55 +93,71 @@ abstract class Core {
 		}
 		
 		if (! $IS_AJAX) {
-			$packageBuildPath = self::PATH_BUILD . '/$package.js';
-			$lastTime = 0;
-			foreach (self::$JS_FILES as $fileName) {
-				if (strpos($fileName, ':') === 0) {
-					$fileName = substr($fileName, 1);
-				}
-				$modifiedDate = filemtime($fileName);
-				if ($lastTime < $modifiedDate) {
-					$lastTime = $modifiedDate;
-				}
-			}
-			
-			if (! is_file($packageBuildPath) || $lastTime > filemtime($packageBuildPath)) {
-				$js = new JS();
+			{ // JavaScript
+				$jsPackageBuildPath = self::PATH_BUILD . '/$package.js';
+				$lastTime = 0;
 				foreach (self::$JS_FILES as $fileName) {
-					$loadEvent = strpos($fileName, ':') === 0;
-					if ($loadEvent) {
-						$js->add('document.addEventListener("DOMContentLoaded", function(event) {');
+					if (strpos($fileName, ':') === 0) {
 						$fileName = substr($fileName, 1);
 					}
-					
-					$js->add($fileName);
-					
-					if ($loadEvent) {
-						$js->add('});');
+					$modifiedDate = filemtime($fileName);
+					if ($lastTime < $modifiedDate) {
+						$lastTime = $modifiedDate;
 					}
 				}
 				
-				$js->add('Vue.CONTEXT_PATH = "' . $CONTEXT_PATH . '";');
-				
-				$js->minify($packageBuildPath);
+				if (! is_file($jsPackageBuildPath) || $lastTime > filemtime($jsPackageBuildPath)) {
+					$js = new JS();
+					foreach (self::$JS_FILES as $fileName) {
+						$loadEvent = strpos($fileName, ':') === 0;
+						if ($loadEvent) {
+							$js->add('document.addEventListener("DOMContentLoaded", function(event) {');
+							$fileName = substr($fileName, 1);
+						}
+						
+						$js->add($fileName);
+						
+						if ($loadEvent) {
+							$js->add('});');
+						}
+					}
+					
+					$js->add('Vue.CONTEXT_PATH = "' . $CONTEXT_PATH . '";');
+					
+					$js->minify($jsPackageBuildPath);
+				}
 			}
 			
-			$styleViewPath = self::PATH_VIEW . '/styles.css';
-			$styleBuildPath = self::PATH_BUILD . '/styles.css';
-			$hasStyleFile = is_file($styleViewPath);
-			if ($hasStyleFile) {
-				if (! is_file($styleBuildPath) || filemtime($styleViewPath) > filemtime($styleBuildPath)) {
-					(new CSS($styleViewPath))->minify($styleBuildPath);
+			{ // CSS
+				$hasStylePackage = ! empty(self::$CSS_FILES);
+				if ($hasStylePackage) {
+					$cssPackageBuildPath = self::PATH_BUILD . '/$package.css';
+					$lastTime = 0;
+					foreach (self::$CSS_FILES as $fileName) {
+						$modifiedDate = filemtime($fileName);
+						if ($lastTime < $modifiedDate) {
+							$lastTime = $modifiedDate;
+						}
+					}
+					
+					if (! is_file($cssPackageBuildPath) || $lastTime > filemtime($cssPackageBuildPath)) {
+						$css = new CSS();
+						foreach (self::$CSS_FILES as $fileName) {
+							$css->add($fileName);
+						}
+						
+						$css->minify($cssPackageBuildPath);
+					}
 				}
 			}
 			
 			$templateViewPath = self::PATH_VIEW . '/index.html';
 			$templateBuildPath = self::PATH_BUILD . '/index.html';
 			if (! is_file($templateBuildPath) || filemtime($templateViewPath) > filemtime($templateBuildPath)) {
-				$prependScriptHTML = '<script type="text/javascript" src="' . $CONTEXT_PATH . $packageBuildPath . '" charset="' . Project::$chatset . '"></script>';
+				$prependScriptHTML = '<script type="text/javascript" src="' . $CONTEXT_PATH . $jsPackageBuildPath . '" charset="' . Project::$chatset . '"></script>';
 				
-				if ($hasStyleFile) {
-					$prependScriptHTML .= '<link rel="stylesheet" type="text/css" href="' . $CONTEXT_PATH . $styleBuildPath . '"></link>';
+				if ($hasStylePackage) {
+					$prependScriptHTML .= '<link rel="stylesheet" type="text/css" href="' . $CONTEXT_PATH . $cssPackageBuildPath . '"></link>';
 				}
 				
 				Minify_HTML::minifySave($templateViewPath, $templateBuildPath, $prependScriptHTML);
@@ -277,7 +295,7 @@ abstract class Core {
 					$dataComponent = isset($vueDT->d) ? json_encode($vueDT->d) : '{}';
 					$dataRoot = isset($vueDT->rd) ? json_encode($vueDT->rd) : '{}';
 					$script = 'Vue.processApp("' . $TARGET_NAME . '",' . json_encode(file_get_contents($appPathHTML)) . ', ' . $dataComponent . ', ' . $dataRoot . ', ' . $methodsList . ', ' . ($appJSExist ? 'function(App) {' . file_get_contents($appURL) . '}' : 'null') . ');';
-					echo $IS_AJAX ? $script : '<script>' . $script . (Project::liveViewEnabled() ? 'Vue.liveView.checkModification("'.$TARGET_NAME.'");' : '').'</script>';
+					echo $IS_AJAX ? $script : '<script>' . $script . (Project::liveViewEnabled() ? 'Vue.liveView.checkModification("' . $TARGET_NAME . '");' : '') . '</script>';
 				}
 			}
 		}
@@ -341,8 +359,8 @@ abstract class Core {
 			'INSTANCE' => new HttpSession()
 		);
 	}
-	
-	private static function hasModification(string $TARGET_NAME) : bool {
+
+	private static function hasModification(string $TARGET_NAME): bool {
 		$appTargetPath = '/app/' . $TARGET_NAME . '/' . $TARGET_NAME;
 		
 		$packageBuildPath = self::PATH_BUILD . '/$package.js';
@@ -361,10 +379,17 @@ abstract class Core {
 			return true;
 		}
 		
-		$styleViewPath = self::PATH_VIEW . '/styles.css';
-		$styleBuildPath = self::PATH_BUILD . '/styles.css';
-		if (is_file($styleViewPath)) {
-			if (! is_file($styleBuildPath) || filemtime($styleViewPath) > filemtime($styleBuildPath)) {
+		if (! empty(self::$CSS_FILES)) {
+			$cssPackageBuildPath = self::PATH_BUILD . '/$package.css';
+			$lastTime = 0;
+			foreach (self::$CSS_FILES as $fileName) {
+				$modifiedDate = filemtime($fileName);
+				if ($lastTime < $modifiedDate) {
+					$lastTime = $modifiedDate;
+				}
+			}
+			
+			if (! is_file($cssPackageBuildPath) || $lastTime > filemtime($cssPackageBuildPath)) {
 				return true;
 			}
 		}
