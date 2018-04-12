@@ -9,3 +9,5 @@ Project::registerJavascript('app/modal.js');
 Project::importJavascriptPlugin('app/logout.js');
 
 DatabaseConnection::register('default', 'mysql', '127.0.0.1', 'arquitetura', 'root');
+
+Project::initLiveView();

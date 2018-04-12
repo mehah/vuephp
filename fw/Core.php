@@ -36,6 +36,11 @@ abstract class Core {
 		$APP_CACHED = ($_REQUEST['cached'] ?? false) === 'true';
 		
 		$APP_URL = $_REQUEST['url'] ?? Project::$defaultModule;
+		
+		if(Project::liveViewEnabled() && $APP_URL === 'check') {
+			die(self::hasModification($_REQUEST['app'] ?? Project::$defaultModule));
+		}
+		
 		$exURL = explode("/", $APP_URL, 3);
 		
 		$TARGET_NAME = $exURL[0];
@@ -265,7 +270,7 @@ abstract class Core {
 					$dataComponent = isset($vueDT->d) ? json_encode($vueDT->d) : '{}';
 					$dataRoot = isset($vueDT->rd) ? json_encode($vueDT->rd) : '{}';
 					$script = 'Vue.processApp("' . $TARGET_NAME . '",' . json_encode(file_get_contents($appPathHTML)) . ', ' . $dataComponent . ', ' . $dataRoot . ', ' . $methodsList . ', ' . ($appJSExist ? 'function(App) {' . file_get_contents($appURL) . '}' : 'null') . ');';
-					echo $IS_AJAX ? $script : '<script>' . $script . '</script>';
+					echo $IS_AJAX ? $script : '<script>' . $script . (Project::liveViewEnabled() ? 'Vue.liveView.checkModification("'.$TARGET_NAME.'");' : '').'</script>';
 				}
 			}
 		}
@@ -328,5 +333,53 @@ abstract class Core {
 		return $_SESSION[Project::$name] ?? $_SESSION[Project::$name] = Array(
 			'INSTANCE' => new HttpSession()
 		);
+	}
+	
+	private static function hasModification(string $TARGET_NAME) : bool {
+		$appTargetPath = '/app/' . $TARGET_NAME . '/' . $TARGET_NAME;
+		
+		$packageBuildPath = self::PATH_BUILD . '/$package.js';
+		$lastTime = 0;
+		foreach (self::$JS_FILES as $fileName) {
+			if (strpos($fileName, ':') === 0) {
+				$fileName = substr($fileName, 1);
+			}
+			$modifiedDate = filemtime($fileName);
+			if ($lastTime < $modifiedDate) {
+				$lastTime = $modifiedDate;
+			}
+		}
+		
+		if (! is_file($packageBuildPath) || $lastTime > filemtime($packageBuildPath)) {
+			return true;
+		}
+		
+		$styleViewPath = self::PATH_VIEW . '/styles.css';
+		$styleBuildPath = self::PATH_BUILD . '/styles.css';
+		if (is_file($styleViewPath)) {
+			if (! is_file($styleBuildPath) || filemtime($styleViewPath) > filemtime($styleBuildPath)) {
+				return true;
+			}
+		}
+		
+		$templateViewPath = self::PATH_VIEW . '/index.html';
+		$templateBuildPath = self::PATH_BUILD . '/index.html';
+		if (! is_file($templateBuildPath) || filemtime($templateViewPath) > filemtime($templateBuildPath)) {
+			return true;
+		}
+		
+		$appPathHTML = self::PATH_VIEW . $appTargetPath . '.html';
+		$fileBuildPath = self::PATH_BUILD . $appTargetPath . '.html';
+		if (! is_file($fileBuildPath) || filemtime($appPathHTML) > filemtime($fileBuildPath)) {
+			return true;
+		}
+		
+		$appURL = self::PATH_VIEW . $appTargetPath . '.js';
+		$fileBuildPath = self::PATH_BUILD . $appTargetPath . '.js';
+		if (is_file($appURL) && (! is_file($fileBuildPath) || filemtime($appURL) > filemtime($fileBuildPath))) {
+			return true;
+		}
+		
+		return false;
 	}
 }

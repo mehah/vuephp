@@ -24,6 +24,11 @@ Vue.mixin({
 			this.$http.post(url, param, {
 				emulateJSON: true
 			}).then(function(data) {
+				if(Vue.liveView) {
+					clearTimeout(Vue.liveView.id);
+					Vue.liveView.checkModification(appName);
+				}
+				
 				eval(data.body);
 
 				if (url) {

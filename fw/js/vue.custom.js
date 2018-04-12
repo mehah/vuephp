@@ -2,13 +2,14 @@ Vue.globalData = {};
 Vue.pageCache = {};
 Vue.contexts = {};
 
-Vue.processApp = function(appName, template, dataComponent, dataRoot, methodsList, $appJs) {
+Vue.processApp = function(appName, template, dataComponent, dataRoot,
+		methodsList, $appJs) {
 	var el = null;
 	if (!(appName in Vue.options.components)) {
 		var component = {
-			template: '<app>' + template + '</app>',
-			data: dataComponent,
-			methods: methodsList
+			template : '<app>' + template + '</app>',
+			data : dataComponent,
+			methods : methodsList
 		};
 
 		if ($appJs) {
@@ -40,11 +41,11 @@ Vue.processApp = function(appName, template, dataComponent, dataRoot, methodsLis
 		} else {
 			dataRoot.currentView = appName;
 			Vue.contexts[el] = new Vue({
-				el: el,
-				data: dataRoot,
-				mixins: [{
-					data: Vue.globalData
-				}]
+				el : el,
+				data : dataRoot,
+				mixins : [ {
+					data : Vue.globalData
+				} ]
 			});
 		}
 	}
