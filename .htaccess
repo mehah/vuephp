@@ -3,3 +3,14 @@ RewriteCond %{REQUEST_URI} !\.(png|jpe?g|gif|css|js)$ [NC]
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
+
+RewriteEngine On
+RewriteCond %{REQUEST_URI} !\.(php|html)$ [NC]
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^(.*)$ public_html/$1 [QSA,L]
+
+RewriteEngine on
+RewriteCond %{REQUEST_URI} "/src/" [OR]
+RewriteCond %{REQUEST_URI} "/fw/"
+RewriteRule ^.*$ /404 [L]

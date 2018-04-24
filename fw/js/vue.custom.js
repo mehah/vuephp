@@ -2,23 +2,24 @@ Vue.globalData = {};
 Vue.pageCache = {};
 Vue.contexts = {};
 
-Vue.processApp = function(appName, template, dataComponent, dataRoot,
-		methodsList, $appJs) {
+Vue.processApp = function(appName, template, dataComponent, dataRoot, methodsList, $appJs) {
 	var el = null;
 	if (!(appName in Vue.options.components)) {
 		var component = {
 			template : '<app>' + template + '</app>',
 			data : dataComponent,
-			methods : methodsList
+			methods : methodsList,
+			dataRoot : {}
 		};
 
 		if ($appJs) {
 			$appJs.call(component, function(id, component) {
 				el = id;
 			});
+			Vue.util.merge(dataRoot, component.dataRoot);
 		}
 
-		component.target = el;
+		component.target = el;		
 		var data = component.data;
 		component.data = function() {
 			return data;
@@ -50,3 +51,11 @@ Vue.processApp = function(appName, template, dataComponent, dataRoot,
 		}
 	}
 };
+/*
+ * Vue.event = (function() { var eventsOnLoad = []; var load = function() {
+ * for(i in eventsOnLoad) { eventsOnLoad[i](); } };
+ * 
+ * var registerOnLoad = function(f) { eventsOnLoad.push(f); };
+ * 
+ * return { load: load, registerOnLoad: registerOnLoad, } })();
+ */

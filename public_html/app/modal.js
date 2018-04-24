@@ -1,4 +1,4 @@
-window.Modal = new Vue({
+Modal = new Vue({
 	el : '#modal',
 	components : {
 		'modal' : {

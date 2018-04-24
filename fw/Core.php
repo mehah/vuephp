@@ -3,19 +3,20 @@ namespace fw;
 
 use fw\http\HttpSession;
 use fw\impl\AccessRule;
-use fw\lib\Minify_HTML;
-use fw\lib\MatthiasMullie\Minify\CSS;
+use fw\lib\HTMLMinifier;
 use fw\lib\MatthiasMullie\Minify\JS;
 
 abstract class Core {
 
-	private const PATH_BUILD = 'build';
-
 	private const PATH_SRC = 'src';
 
-	private const PATH_VIEW = 'public_html';
+	public const PATH_BUILD = 'build';
 
-	protected static $JS_FILES = Array(
+	public const PATH_VIEW = 'public_html';
+
+	private const PATH_PROJECT_CONFIG = self::PATH_SRC . '/project.config.php';
+
+	protected static $FW_JS_FILES = Array(
 		'fw/js/events.js',
 		'fw/js/crossbrowser.js',
 		'fw/js/vue.js',
@@ -26,7 +27,7 @@ abstract class Core {
 		'fw/js/vue.modalError.js'
 	);
 
-	protected static $CSS_FILES = Array();
+	private static $template;
 
 	static function init(): void {
 		spl_autoload_register(function ($class_name) {
@@ -36,12 +37,20 @@ abstract class Core {
 		include self::PATH_SRC . '/project.config.php';
 		
 		$APP_CACHED = ($_REQUEST['cached'] ?? false) === 'true';
-		
 		$APP_URL = $_REQUEST['url'] ?? Project::$defaultModule;
 		
-		if (Project::liveViewEnabled() && $APP_URL === 'check') {
+		if (Project::liveReloadEnabled() && $APP_URL === 'check') {
 			set_time_limit(0);
+			
+			$lastMTime = filemtime(self::PATH_PROJECT_CONFIG);
+			
+			self::$template = unserialize(file_get_contents(self::PATH_BUILD . '/template.src'));
 			while (! self::hasModification($_REQUEST['app'] ?? Project::$defaultModule)) {
+				if ($lastMTime < filemtime(self::PATH_PROJECT_CONFIG)) {
+					self::delete_files(self::PATH_BUILD);
+					break;
+				}
+				
 				if (connection_aborted()) {
 					exit();
 				}
@@ -64,7 +73,7 @@ abstract class Core {
 			$appPathHTML = $appTargetFullPath . '.html';
 			$appPathHTMLExist = is_file($appPathHTML);
 			
-			if (! $controllerExist || ! $appPathHTMLExist) {
+			if (! $controllerExist && ! $appPathHTMLExist) {
 				http_response_code(404);
 				exit('PAGE NOT FOUND');
 			}
@@ -88,79 +97,51 @@ abstract class Core {
 			}
 		}
 		
-		if (! is_dir(self::PATH_BUILD)) {
+		$generatedBuild = is_dir(self::PATH_BUILD);
+		if (! $generatedBuild) {
 			mkdir(self::PATH_BUILD, 0777, true);
 		}
 		
-		if (! $IS_AJAX) {
-			{ // JavaScript
-				$jsPackageBuildPath = self::PATH_BUILD . '/$package.js';
+		if (! $IS_AJAX && (Project::$checkModification || ! $generatedBuild)) {
+			{ // Javascript FW
+				$jsFWBuildPath = self::PATH_BUILD . '/$fw.js';
 				$lastTime = 0;
-				foreach (self::$JS_FILES as $fileName) {
-					if (strpos($fileName, ':') === 0) {
-						$fileName = substr($fileName, 1);
-					}
+				foreach (self::$FW_JS_FILES as $fileName) {
 					$modifiedDate = filemtime($fileName);
 					if ($lastTime < $modifiedDate) {
 						$lastTime = $modifiedDate;
 					}
 				}
 				
-				if (! is_file($jsPackageBuildPath) || $lastTime > filemtime($jsPackageBuildPath)) {
+				if (! is_file($jsFWBuildPath) || $lastTime > filemtime($jsFWBuildPath)) {
 					$js = new JS();
-					foreach (self::$JS_FILES as $fileName) {
-						$loadEvent = strpos($fileName, ':') === 0;
-						if ($loadEvent) {
-							$js->add('document.addEventListener("DOMContentLoaded", function(event) {');
-							$fileName = substr($fileName, 1);
-						}
-						
+					foreach (self::$FW_JS_FILES as $fileName) {
 						$js->add($fileName);
-						
-						if ($loadEvent) {
-							$js->add('});');
-						}
 					}
 					
 					$js->add('Vue.CONTEXT_PATH = "' . $CONTEXT_PATH . '";');
-					
-					$js->minify($jsPackageBuildPath);
+					$js->minify($jsFWBuildPath);
 				}
 			}
 			
-			{ // CSS
-				$hasStylePackage = ! empty(self::$CSS_FILES);
-				if ($hasStylePackage) {
-					$cssPackageBuildPath = self::PATH_BUILD . '/$package.css';
-					$lastTime = 0;
-					foreach (self::$CSS_FILES as $fileName) {
-						$modifiedDate = filemtime($fileName);
-						if ($lastTime < $modifiedDate) {
-							$lastTime = $modifiedDate;
-						}
-					}
-					
-					if (! is_file($cssPackageBuildPath) || $lastTime > filemtime($cssPackageBuildPath)) {
-						$css = new CSS();
-						foreach (self::$CSS_FILES as $fileName) {
-							$css->add($fileName);
-						}
-						
-						$css->minify($cssPackageBuildPath);
-					}
-				}
-			}
+			$file = 'index.html';
 			
-			$templateViewPath = self::PATH_VIEW . '/index.html';
-			$templateBuildPath = self::PATH_BUILD . '/index.html';
-			if (! is_file($templateBuildPath) || filemtime($templateViewPath) > filemtime($templateBuildPath)) {
-				$prependScriptHTML = '<script type="text/javascript" src="' . $CONTEXT_PATH . $jsPackageBuildPath . '" charset="' . Project::$chatset . '"></script>';
+			$template = new Template($file);
+			file_put_contents(self::PATH_BUILD . '/template.src', serialize($template));
+			
+			$templateViewPath = self::PATH_VIEW . '/' . $file;
+			$templateBuildPath = self::PATH_BUILD . '/' . $file;
+			if (! is_file($templateBuildPath) || $template->getModifiedDate() > filemtime($templateBuildPath)) {
+				$prependScriptHTML = '<script type="text/javascript" src="' . $CONTEXT_PATH . $jsFWBuildPath . '" charset="' . Project::$chatset . '"></script>';
 				
-				if ($hasStylePackage) {
-					$prependScriptHTML .= '<link rel="stylesheet" type="text/css" href="' . $CONTEXT_PATH . $cssPackageBuildPath . '"></link>';
-				}
+				$html = $prependScriptHTML . $template->html;
 				
-				Minify_HTML::minifySave($templateViewPath, $templateBuildPath, $prependScriptHTML);
+				$options = array(
+					'shift_script_tags_to_bottom' => true,
+					'compression_mode' => 'all_whitespace'
+				);
+				
+				file_put_contents($templateBuildPath, HTMLMinifier::process($html, $options));
 			}
 			
 			readfile($templateBuildPath);
@@ -295,7 +276,7 @@ abstract class Core {
 					$dataComponent = isset($vueDT->d) ? json_encode($vueDT->d) : '{}';
 					$dataRoot = isset($vueDT->rd) ? json_encode($vueDT->rd) : '{}';
 					$script = 'Vue.processApp("' . $TARGET_NAME . '",' . json_encode(file_get_contents($appPathHTML)) . ', ' . $dataComponent . ', ' . $dataRoot . ', ' . $methodsList . ', ' . ($appJSExist ? 'function(App) {' . file_get_contents($appURL) . '}' : 'null') . ');';
-					echo $IS_AJAX ? $script : '<script>' . $script . (Project::liveViewEnabled() ? 'Vue.liveView.checkModification("' . $TARGET_NAME . '");' : '') . '</script>';
+					echo $IS_AJAX ? $script : '<script>' . $script . (Project::liveReloadEnabled() ? 'Vue.liveView.checkModification("' . $TARGET_NAME . '");' : '') . '</script>';
 				}
 			}
 		}
@@ -363,40 +344,24 @@ abstract class Core {
 	private static function hasModification(string $TARGET_NAME): bool {
 		$appTargetPath = '/app/' . $TARGET_NAME . '/' . $TARGET_NAME;
 		
-		$packageBuildPath = self::PATH_BUILD . '/$package.js';
+		$jsFWBuildPath = self::PATH_BUILD . '/$fw.js';
 		$lastTime = 0;
-		foreach (self::$JS_FILES as $fileName) {
-			if (strpos($fileName, ':') === 0) {
-				$fileName = substr($fileName, 1);
-			}
+		foreach (self::$FW_JS_FILES as $fileName) {
 			$modifiedDate = filemtime($fileName);
 			if ($lastTime < $modifiedDate) {
 				$lastTime = $modifiedDate;
 			}
 		}
 		
-		if (! is_file($packageBuildPath) || $lastTime > filemtime($packageBuildPath)) {
+		if (! is_file($jsFWBuildPath) || $lastTime > filemtime($jsFWBuildPath)) {
 			return true;
 		}
 		
-		if (! empty(self::$CSS_FILES)) {
-			$cssPackageBuildPath = self::PATH_BUILD . '/$package.css';
-			$lastTime = 0;
-			foreach (self::$CSS_FILES as $fileName) {
-				$modifiedDate = filemtime($fileName);
-				if ($lastTime < $modifiedDate) {
-					$lastTime = $modifiedDate;
-				}
-			}
-			
-			if (! is_file($cssPackageBuildPath) || $lastTime > filemtime($cssPackageBuildPath)) {
-				return true;
-			}
-		}
-		
-		$templateViewPath = self::PATH_VIEW . '/index.html';
 		$templateBuildPath = self::PATH_BUILD . '/index.html';
-		if (! is_file($templateBuildPath) || filemtime($templateViewPath) > filemtime($templateBuildPath)) {
+		if (! is_file($templateBuildPath) || self::$template->hasModification()) {
+			if (self::$template->hasTemplateModified()) {
+				self::delete_files($templateBuildPath);
+			}
 			return true;
 		}
 		
@@ -413,5 +378,19 @@ abstract class Core {
 		}
 		
 		return false;
+	}
+
+	private static function delete_files($target) {
+		if (is_dir($target)) {
+			$files = glob($target . '*', GLOB_MARK); // GLOB_MARK adds a slash to directories returned
+			
+			foreach ($files as $file) {
+				self::delete_files($file);
+			}
+			
+			rmdir($target);
+		} elseif (is_file($target)) {
+			unlink($target);
+		}
 	}
 }
