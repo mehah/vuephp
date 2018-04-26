@@ -5,6 +5,10 @@ use fw\http\HttpSession;
 use fw\impl\AccessRule;
 use fw\lib\HTMLMinifier;
 use fw\lib\MatthiasMullie\Minify\JS;
+if (! defined('LIBXML_HTML_NODEFDTD')) {
+	define("LIBXML_HTML_NODEFDTD", 4);
+	define("LIBXML_HTML_NOIMPLIED", 8192);
+}
 
 abstract class Core {
 
@@ -14,7 +18,7 @@ abstract class Core {
 
 	public const PATH_VIEW = 'public_html';
 
-	private const PATH_PROJECT_CONFIG = self::PATH_SRC . '/project.config.php';
+	private const PATH_PROJECT_CONFIG = self::PATH_SRC . '/config.php';
 
 	protected static $FW_JS_FILES = Array(
 		'fw/js/events.js',
@@ -34,18 +38,22 @@ abstract class Core {
 			include str_replace('\\', '/', $class_name) . '.php';
 		});
 		
-		include self::PATH_SRC . '/project.config.php';
+		if (is_file(self::PATH_PROJECT_CONFIG)) {
+			include self::PATH_PROJECT_CONFIG;
+		}
 		
-		$APP_CACHED = ($_REQUEST['cached'] ?? false) === 'true';
-		$APP_URL = $_REQUEST['url'] ?? Project::$defaultModule;
+		if (! is_file($pathRouter = self::PATH_SRC . '/router.php')) {
+			throw new \Exception('Não foi encontrado o arquivo de configuração de routeamento em: src/router.php');
+		}
 		
+		$APP_URL = $_REQUEST['url'] ?? '/';
 		if (Project::liveReloadEnabled() && $APP_URL === 'check') {
 			set_time_limit(0);
 			
 			$lastMTime = filemtime(self::PATH_PROJECT_CONFIG);
 			
 			self::$template = unserialize(file_get_contents(self::PATH_BUILD . '/template.src'));
-			while (! self::hasModification($_REQUEST['app'] ?? Project::$defaultModule)) {
+			while (! self::hasModification($_REQUEST['app'] ?? '/')) {
 				if ($lastMTime < filemtime(self::PATH_PROJECT_CONFIG)) {
 					self::delete_files(self::PATH_BUILD);
 					break;
@@ -59,115 +67,70 @@ abstract class Core {
 			exit('1');
 		}
 		
-		$exURL = explode("/", $APP_URL, 3);
-		
-		$TARGET_NAME = $exURL[0];
-		$TAGET_CLASS_NAME = ucfirst($TARGET_NAME);
-		
-		$controllerPath = self::PATH_SRC . '/controller/' . $TAGET_CLASS_NAME . 'Controller.php';
-		$controllerExist = is_file($controllerPath);
-		
-		if (! $APP_CACHED) {
-			$appTargetPath = '/app/' . $TARGET_NAME . '/' . $TARGET_NAME;
-			$appTargetFullPath = self::PATH_VIEW . $appTargetPath;
-			$appPathHTML = $appTargetFullPath . '.html';
-			$appPathHTMLExist = is_file($appPathHTML);
-			
-			if (! $controllerExist && ! $appPathHTMLExist) {
-				http_response_code(404);
-				exit('PAGE NOT FOUND');
-			}
-		}
-		
-		session_start();
-		
-		$ARGUMENTS = $_REQUEST['args'] ?? null;
-		
-		$CONTEXT_PATH = str_replace('\\', '/', dirname($_SERVER['PHP_SELF'])) . '/';
-		$HAS_METHOD = false;
-		
-		$httpX = $_SERVER['HTTP_X_REQUESTED_WITH'] ?? null;
-		$IS_AJAX = $httpX && strtolower($httpX) === 'xmlhttprequest';
-		
-		if (isset($exURL[1])) {
-			if (is_numeric($exURL[1])) {
-				$ARGUMENTS = '[' . $exURL[1] . ']';
-			} else {
-				$HAS_METHOD = (strlen($exURL[1]) > 0);
-			}
-		}
-		
 		$generatedBuild = is_dir(self::PATH_BUILD);
 		if (! $generatedBuild) {
 			mkdir(self::PATH_BUILD, 0777, true);
 		}
 		
-		if (! $IS_AJAX && (Project::$checkModification || ! $generatedBuild)) {
-			{ // Javascript FW
-				$jsFWBuildPath = self::PATH_BUILD . '/$fw.js';
-				$lastTime = 0;
-				foreach (self::$FW_JS_FILES as $fileName) {
-					$modifiedDate = filemtime($fileName);
-					if ($lastTime < $modifiedDate) {
-						$lastTime = $modifiedDate;
-					}
-				}
-				
-				if (! is_file($jsFWBuildPath) || $lastTime > filemtime($jsFWBuildPath)) {
-					$js = new JS();
-					foreach (self::$FW_JS_FILES as $fileName) {
-						$js->add($fileName);
-					}
-					
-					$js->add('Vue.CONTEXT_PATH = "' . $CONTEXT_PATH . '";');
-					$js->minify($jsFWBuildPath);
-				}
+		if(Project::$checkModification) {
+			include $pathRouter;
+		} else {
+			$pathRouterSource = self::PATH_BUILD.'/router.src';
+			
+			$reflectionClass = new \ReflectionClass(Router::class);
+			$propList = $reflectionClass->getProperty('list');
+			$propList->setAccessible(true);
+			
+			if(!is_file($pathRouterSource)) {
+				include $pathRouter;
+				$list = $propList->getValue();
+				file_put_contents($pathRouterSource, serialize($list));
+			} else {
+				$propList->setValue(unserialize(file_get_contents($pathRouterSource)));
 			}
 			
-			$file = 'index.html';
-			
-			$template = new Template($file);
-			file_put_contents(self::PATH_BUILD . '/template.src', serialize($template));
-			
-			$templateViewPath = self::PATH_VIEW . '/' . $file;
-			$templateBuildPath = self::PATH_BUILD . '/' . $file;
-			if (! is_file($templateBuildPath) || $template->getModifiedDate() > filemtime($templateBuildPath)) {
-				$prependScriptHTML = '<script type="text/javascript" src="' . $CONTEXT_PATH . $jsFWBuildPath . '" charset="' . Project::$chatset . '"></script>';
-				
-				$html = $prependScriptHTML . $template->html;
-				
-				$options = array(
-					'shift_script_tags_to_bottom' => true,
-					'compression_mode' => 'all_whitespace'
-				);
-				
-				file_put_contents($templateBuildPath, HTMLMinifier::process($html, $options));
-			}
-			
-			readfile($templateBuildPath);
+			$propList->setAccessible(false);
 		}
 		
-		$methodsList = $vueDT = '{}';
-		if ($controllerExist) {
-			$session = self::getSession();
-			
-			$controller = null;
-			$requestedMethod = null;
-			
-			if ($HAS_METHOD) {
-				$requestedMethod = $exURL[1];
-				$controller = $session[$TAGET_CLASS_NAME] ?? null;
-			} else {
-				$requestedMethod = 'init';
+		list($data, $methodArguments) = Router::getData($APP_URL);
+		
+		$APP_CACHED = ($_REQUEST['cached'] ?? false) === 'true';
+		if (! $APP_CACHED) {
+			if (! $data) {
+				http_response_code(404);
+				exit('PAGE NOT FOUND');
 			}
+		}
+		
+		$templatePath = $data['templatePath'];
+		$controllerClass = $data['controllerClass'];
+		$requestedMethod = $data['methodName'];
+		$applicationPath = $data['applicationPath'];
+		if ($applicationPath) {
+			$applicationName = $data['applicationName'];
+			$applicationPath = '/' . $applicationPath . '/' . $applicationName;
+			$applicationFullPath = self::PATH_VIEW . $applicationPath;
+			$appPathHTML = $applicationFullPath . '.html';
+		}
+		
+		$controllerInicialized = $requestedMethod && $requestedMethod !== 'init';
+		
+		session_start();
+		
+		$CONTEXT_PATH = str_replace('\\', '/', dirname($_SERVER['PHP_SELF'])) . '/';
+		
+		$methodsList = $vueDT = '{}';
+		if ($controllerClass) {
+			$session = &self::getSession();
 			
-			$className = self::PATH_SRC . '\controller\\' . $TAGET_CLASS_NAME . 'Controller';
+			$controller = $controllerInicialized ? $session[$controllerClass] : null;
+			
 			if (! $controller) {
-				$controller = new $className();
+				$controller = new $controllerClass();
 				if (! ($controller instanceof ComponentController)) {
-					die('O controlador ' . $className . ' precisa extender a classe ComponentController.');
+					die('O controlador ' . $controllerClass . ' precisa extender a classe ComponentController.');
 				}
-				$session[$TAGET_CLASS_NAME] = $controller;
+				$session[$controllerClass] = $controller;
 			}
 			
 			if ($controller instanceof AccessRule && ! self::hasAccess($controller, $requestedMethod)) {
@@ -175,13 +138,13 @@ abstract class Core {
 				die('Você não está autorizado a executar essa ação.');
 			}
 			
-			$reflectionClass = new \ReflectionClass($className);
+			$reflectionClass = new \ReflectionClass($controllerClass);
 			
 			$methodsList = '';
 			
 			if (! $APP_CACHED) {
-				$controllerBuildPath = self::PATH_BUILD . $appTargetPath . '.methods.js';
-				if (! is_file($controllerBuildPath) || filemtime($controllerPath) > filemtime($controllerBuildPath)) {
+				$controllerBuildPath = self::PATH_BUILD . $applicationPath . '.methods.js';
+				if (! is_file($controllerBuildPath) || filemtime($controllerClass . '.php') > filemtime($controllerBuildPath)) {
 					$methods = $reflectionClass->getMethods(\ReflectionMethod::IS_PUBLIC);
 					foreach ($methods as $method) {
 						$methodName = $method->getName();
@@ -199,7 +162,7 @@ abstract class Core {
 							$args .= chr($i) . ',';
 						}
 						
-						$methodsList .= '$' . $methodName . ':function(' . $args . 'z){this.request("' . $CONTEXT_PATH . $TARGET_NAME . '/' . $methodName . '", ' . $args . 'z);}';
+						$methodsList .= '$' . $methodName . ':function(' . $args . 'z){this.request("' . $CONTEXT_PATH . $applicationName . '/' . $methodName . '", ' . $args . 'z);}';
 					}
 					$methodsList = '{' . $methodsList . '}';
 					
@@ -216,9 +179,14 @@ abstract class Core {
 				$vueDT = $propData->getValue($controller);
 				
 				$reflectionMethod = $reflectionClass->getMethod($requestedMethod);
-				if ($ARGUMENTS) {
-					$data = json_decode($ARGUMENTS);
-					
+				
+				if(!$methodArguments) {
+					if(isset($_REQUEST['args'])) {
+						$methodArguments = json_decode($_REQUEST['args']);
+					}
+				}
+				
+				if ($methodArguments) {					
 					$params = $reflectionMethod->getParameters();
 					
 					$list = Array();
@@ -228,10 +196,10 @@ abstract class Core {
 						if ($classType && ! $classType->isBuiltin()) {
 							$className = $classType->getName();
 							$arg = new $className();
-							self::setClassProps($data[$i], $arg);
+							self::setClassProps($methodArguments[$i], $arg);
 							
 							$list[] = $arg;
-						} elseif ($arg = ($data[$i] ?? null)) {
+						} elseif ($arg = ($methodArguments[$i] ?? null)) {
 							$list[] = $arg;
 						}
 					}
@@ -245,7 +213,56 @@ abstract class Core {
 			}
 		}
 		
-		if ($HAS_METHOD) {
+		$httpX = $_SERVER['HTTP_X_REQUESTED_WITH'] ?? null;		
+		$IS_AJAX = $httpX && strtolower($httpX) === 'xmlhttprequest';
+		
+		if (! $IS_AJAX && $templatePath) {
+			$templateBuildPath = self::PATH_BUILD . '/' . $templatePath;
+			
+			if (Project::$checkModification || ! $generatedBuild) {
+				{ // Javascript FW
+					$jsFWBuildPath = self::PATH_BUILD . '/$fw.js';
+					$lastTime = 0;
+					foreach (self::$FW_JS_FILES as $fileName) {
+						$modifiedDate = filemtime($fileName);
+						if ($lastTime < $modifiedDate) {
+							$lastTime = $modifiedDate;
+						}
+					}
+					
+					if (! is_file($jsFWBuildPath) || $lastTime > filemtime($jsFWBuildPath)) {
+						$js = new JS();
+						foreach (self::$FW_JS_FILES as $fileName) {
+							$js->add($fileName);
+						}
+						
+						$js->add('Vue.CONTEXT_PATH = "' . $CONTEXT_PATH . '";');
+						$js->minify($jsFWBuildPath);
+					}
+				}
+				
+				$template = new Template($templatePath);
+				file_put_contents(self::PATH_BUILD . '/template.src', serialize($template));
+				
+				if (! is_file($templateBuildPath) || $template->getModifiedDate() > filemtime($templateBuildPath)) {
+					$prependScriptHTML = '<script type="text/javascript" src="' . $CONTEXT_PATH . $jsFWBuildPath . '" charset="' . Project::$chatset . '"></script>';
+					
+					$html = $prependScriptHTML . $template->html;
+					
+					$options = array(
+						'shift_script_tags_to_bottom' => true,
+						'compression_mode' => 'all_whitespace',
+						'show_signature' => 'false'
+					);
+					
+					file_put_contents($templateBuildPath, HTMLMinifier::process($html, $options));
+				}
+			}
+			
+			readfile($templateBuildPath);
+		}
+		
+		if ($controllerInicialized) {
 			if ($vueDT->d ?? $vueDT->ds ?? $vueDT->rd ?? null) {
 				echo json_encode($vueDT);
 			}
@@ -253,36 +270,37 @@ abstract class Core {
 			if ($APP_CACHED) {
 				$dataComponent = isset($vueDT->d) ? json_encode($vueDT->d) : '{}';
 				$dataRoot = isset($vueDT->rd) ? json_encode($vueDT->rd) : '{}';
-				echo 'Vue.processApp("' . $TARGET_NAME . '", null, ' . $dataComponent . ', ' . $dataRoot . ');';
+				echo 'Vue.processApp("' . $applicationPath . '", null, ' . $dataComponent . ', ' . $dataRoot . ');' . (Project::liveReloadEnabled() ? 'Vue.liveReload.checkModification("' . $applicationPath . '");' : '');
 			} else {
-				if ($appPathHTMLExist) {
-					$fileBuildPath = self::PATH_BUILD . $appTargetPath . '.html';
+				if ($applicationPath) {
+					$fileBuildPath = self::PATH_BUILD . $applicationPath . '.html';
+					
 					if (! is_file($fileBuildPath) || filemtime($appPathHTML) > filemtime($fileBuildPath)) {
 						self::checkDir($fileBuildPath);
 						(new JS($appPathHTML))->minify($fileBuildPath);
 					}
 					$appPathHTML = $fileBuildPath;
 					
-					$appURL = $appTargetFullPath . '.js';
-					$appJSExist = is_file($appURL);
+					$appJS = $applicationFullPath . '.js';
+					$appJSExist = is_file($appJS);
 					
-					$fileBuildPath = self::PATH_BUILD . $appTargetPath . '.js';
-					if ($appJSExist && (! is_file($fileBuildPath) || filemtime($appURL) > filemtime($fileBuildPath))) {
+					$fileBuildPath = self::PATH_BUILD . $applicationPath . '.js';
+					if ($appJSExist && (! is_file($fileBuildPath) || filemtime($appJS) > filemtime($fileBuildPath))) {
 						self::checkDir($fileBuildPath);
-						(new JS($appURL))->minify($fileBuildPath);
+						(new JS($appJS))->minify($fileBuildPath);
 					}
-					$appURL = $fileBuildPath;
+					$appJS = $fileBuildPath;
 					
 					$dataComponent = isset($vueDT->d) ? json_encode($vueDT->d) : '{}';
 					$dataRoot = isset($vueDT->rd) ? json_encode($vueDT->rd) : '{}';
-					$script = 'Vue.processApp("' . $TARGET_NAME . '",' . json_encode(file_get_contents($appPathHTML)) . ', ' . $dataComponent . ', ' . $dataRoot . ', ' . $methodsList . ', ' . ($appJSExist ? 'function(App) {' . file_get_contents($appURL) . '}' : 'null') . ');';
-					echo $IS_AJAX ? $script : '<script>' . $script . (Project::liveReloadEnabled() ? 'Vue.liveView.checkModification("' . $TARGET_NAME . '");' : '') . '</script>';
+					$script = 'Vue.processApp("' . $applicationPath . '",' . json_encode(file_get_contents($appPathHTML)) . ', ' . $dataComponent . ', ' . $dataRoot . ', ' . $methodsList . ', ' . ($appJSExist ? 'function(App) {' . file_get_contents($appJS) . '}' : 'null') . ');';
+					echo $IS_AJAX ? $script : '<script>' . $script . (Project::liveReloadEnabled() ? 'Vue.liveReload.checkModification("' . $applicationPath . '");' : '') . '</script>';
 				}
 			}
 		}
 	}
 
-	private static function checkDir(string $path) {
+	private static function checkDir(string $path): void {
 		$dir = dirname($path);
 		if (! is_dir($dir)) {
 			mkdir($dir, 0777, true);
@@ -331,19 +349,25 @@ abstract class Core {
 		}
 	}
 
-	public static function getSessionInstance(): HttpSession {
+	public static function &getSessionInstance(): HttpSession {
 		return $_SESSION[Project::$name]['INSTANCE'];
 	}
 
-	public static function getSession(): iterable {
-		return $_SESSION[Project::$name] ?? $_SESSION[Project::$name] = Array(
+	public static function &getSession(): iterable {
+		if (isset($_SESSION[Project::$name])) {
+			return $_SESSION[Project::$name];
+		}
+		
+		$session = Array(
 			'INSTANCE' => new HttpSession()
 		);
+		
+		$_SESSION[Project::$name] = &$session;
+		
+		return $session;
 	}
 
-	private static function hasModification(string $TARGET_NAME): bool {
-		$appTargetPath = '/app/' . $TARGET_NAME . '/' . $TARGET_NAME;
-		
+	private static function hasModification(string $appTargetPath): bool {
 		$jsFWBuildPath = self::PATH_BUILD . '/$fw.js';
 		$lastTime = 0;
 		foreach (self::$FW_JS_FILES as $fileName) {
@@ -362,6 +386,7 @@ abstract class Core {
 			if (self::$template->hasTemplateModified()) {
 				self::delete_files($templateBuildPath);
 			}
+			
 			return true;
 		}
 		
@@ -380,7 +405,7 @@ abstract class Core {
 		return false;
 	}
 
-	private static function delete_files($target) {
+	private static function delete_files($target): void {
 		if (is_dir($target)) {
 			$files = glob($target . '*', GLOB_MARK); // GLOB_MARK adds a slash to directories returned
 			

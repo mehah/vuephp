@@ -1,7 +1,7 @@
 <table>
 	<thead>
 		<tr>
-			<th><input type="checkbox" name="selecionarTodos" @change="selecionarTodos" /> Selecionar Todos</th>
+			<th><input type="checkbox" name="selecionarTodos" v-on:change="selecionarTodos" /> Selecionar Todos</th>
 			<th>Nome</th>
 		</tr>
 	</thead>
@@ -9,9 +9,9 @@
 		<tr v-for="entity in entitys">
 			<td><input type="checkbox" v-model="entitysCheckeds" :value="entity" /></td>
 			<td>{{entity.name}}</td>
-			<td><a v-goto="'manterCity/'+entity.id">Alterar</a> <a href="#" @click.prevent="remover(entity)">Remover</a></td>
+			<td><a v-goto="'manterCity/'+entity.id">Alterar</a> <a href="#" v-on:click.prevent="remover(entity)">Remover</a></td>
 		</tr>
 	</tbody>
 </table>
-<button @click="deletarTodos">Deletar Todos Selecionados</button>
-<button @click="goback">Voltar</button>
+<button v-on:click="deletarTodos">Deletar Todos Selecionados</button>
+<button v-on:click="goback">Voltar</button>

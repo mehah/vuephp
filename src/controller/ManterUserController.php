@@ -29,5 +29,9 @@ class ManterUserController extends MainController implements AccessRule {
 			"alterar" => "ALTERAR_USER"
 		);
 	}
+
+	public static function getApplicationPath(): ?String {
+		return "app/manterUser";
+	}
 }
 

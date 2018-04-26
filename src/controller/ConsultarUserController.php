@@ -13,7 +13,7 @@ class ConsultarUserController extends MainController implements AccessRule {
 		$this->setData('entitys', User::all());
 	}
 
-	public function deletar(User $entity): bool {		
+	public function deletar(User $entity): bool {
 		return $entity->delete();
 	}
 
@@ -23,6 +23,10 @@ class ConsultarUserController extends MainController implements AccessRule {
 
 	public static function getRules(): ?array {
 		return null;
+	}
+
+	public static function getApplicationPath(): ?String {
+		return "app/consultarUser";
 	}
 }
 

@@ -20,14 +20,10 @@ Vue.mixin({
 
 			param.cached = appName in Vue.options.components;
 
-			url = Vue.CONTEXT_PATH + url;
+			url = Vue.CONTEXT_PATH + (url === '/' ? '' : url);
 			this.$http.post(url, param, {
 				emulateJSON: true
 			}).then(function(data) {
-				if(Vue.liveView) {
-					Vue.liveView.checkModification(appName);
-				}
-				
 				eval(data.body);
 
 				if (url) {

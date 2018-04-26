@@ -1,4 +1,4 @@
-Vue.liveView = {
+Vue.liveReload = {
 	checkModification : function(app) {
 		Vue.http.get(Vue.CONTEXT_PATH + 'check?app=' + app, {
 			before : function(request) {

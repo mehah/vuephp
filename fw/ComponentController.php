@@ -59,6 +59,8 @@ abstract class ComponentController {
 		
 		return new \fw\ComponentController\Validation($hasError, $sharedData);
 	}
+
+	public abstract static function getApplicationPath(): ?String;
 }
 namespace fw\ComponentController;
 

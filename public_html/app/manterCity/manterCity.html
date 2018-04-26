@@ -3,5 +3,5 @@
 		<label for="name">Name</label> <input v-model.trim="entity.name" />
 	</div>
 </div>
-<button @click="manter">{{entity.id ? 'Alterar' : 'Cadastrar'}}</button>
-<button @click="goback">Voltar</button>
+<button v-on:click="manter">{{entity.id ? 'Alterar' : 'Cadastrar'}}</button>
+<button v-on:click="goback">Voltar</button>

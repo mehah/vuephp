@@ -10,13 +10,13 @@
 		<header> EXEMPLO DE ARQUITETURA </header>
 		<nav id="menu">
 			<ul>
-				<li><a href="#" v-goto="'home'">Principal</a></li>
+				<li><a href="#" v-goto="'/'">Principal</a></li>
 				<li><a href="#" v-goto="'consultarUser'" v-if="logged">Consultar Usuário</a></li>
 				<li><a href="#" v-goto="'consultarCity'" v-if="logged">Consultar Cidade</a></li>
 				<li><a href="#" v-goto="'manterUser'" v-if="logged">Cadastrar Usuário</a></li>
 				<li><a href="#" v-goto="'manterCity'" v-if="logged">Cadastrar Cidade</a></li>
 				<li><a href="#" v-goto="'login'" v-if="!logged">Login</a></li>
-				<li><a href="#" v-if="logged" @click.prevent="logout">Sair</a></li>
+				<li><a href="#" v-if="logged" v-on:click.prevent="logout">Sair</a></li>
 			</ul>
 		</nav>
 		<component :is="currentView" :ref="currentView"></component>
@@ -26,9 +26,9 @@
 			<h3 slot="header">Mensagem</h3>
 			<span slot="body">{{msg}}</span>
 			<div slot="footer">
-				<button class="modal-default-button" @click="close">{{closeButtonTxt}}</button>
+				<button class="modal-default-button" v-on:click="close">{{closeButtonTxt}}</button>
 				<template v-if="isConfirm">
-					<button class="modal-default-button" style="margin-right: 15px;" @click="confirm">SIM</button>
+					<button class="modal-default-button" style="margin-right: 15px;" v-on:click="confirm">SIM</button>
 				</template>
 			</div>
 		</modal>

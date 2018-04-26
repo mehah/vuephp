@@ -4,8 +4,12 @@ Vue.directive('goto', {
 
 		var hasHref = el.hasAttribute('href');
 
+		var hash = '';
 		if (hasHref) {
 			if(el.getAttribute('href').indexOf('#') == 0) {
+				if((hash = el.getAttribute('href')) === '#') {
+					hash = '';
+				}
 				hasHref = false;
 			}
 		} else {
@@ -18,7 +22,7 @@ Vue.directive('goto', {
 			}
 			
 			if (url.indexOf(location.href.pathname) === -1) {
-				vnode.context.redirect(binding.value);
+				vnode.context.redirect(binding.value+hash);
 			}
 		};
 		el.addEventListener('click', el.handler);

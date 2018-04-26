@@ -33,5 +33,9 @@ class ManterCityController extends MainController implements AccessRule {
 	public static function getRules(): ?array {
 		return null;
 	}
+
+	public static function getApplicationPath(): ?String {
+		return "app/manterCity";
+	}
 }
 

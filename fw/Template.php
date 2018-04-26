@@ -56,68 +56,26 @@ final class Template {
 		}
 		
 		$path = Core::PATH_BUILD . substr($this->file, strlen(Core::PATH_VIEW));
-		/*if ($element = $document->first('js-package')) {
-			$js = new JS();
-			
-			$files = explode(',', $element->getAttribute('files'));
-			foreach ($files as $fileName) {
-				$fileName = Core::PATH_VIEW . '/' . trim($fileName);
-				$this->filesList[$fileName] = filemtime($fileName);
-				
-				$js->add($fileName);
-			}
-			
-			$fileName = $path . '-package.js';
-			$js->minify($fileName);
-			
-			$element->replace(new Element('script', null, array(
-				'type' => 'text/javascript',
-				'src' => $fileName,
-				'charset' => Project::$chatset
-			)));
-		}
-		
-		if ($element = $document->first('css-package')) {
-			$css = new CSS();
-			
-			$files = explode(',', $element->getAttribute('files'));
-			foreach ($files as $fileName) {
-				$fileName = Core::PATH_VIEW . '/' . trim($fileName);
-				$this->filesList[$fileName] = filemtime($fileName);
-				
-				$css->add($fileName);
-			}
-			
-			$fileName = $path . '-package.css';
-			$css->minify($fileName);
-			
-			$element->replace(new Element('link', null, array(
-				'rel' => 'stylesheet',
-				'type' => 'text/css',
-				'href' => $fileName
-			)));
-		}*/
-
 		$pathSave = $path . '-package.js';
 		$this->generatePackage(JS::class, $document, 'js-package', $pathSave, 'script', array(
 			'type' => 'text/javascript',
-			'src' => $pathSave,
 			'charset' => Project::$chatset
 		));
 		
 		$pathSave = $path . '-package.css';
 		$this->generatePackage(CSS::class, $document, 'css-package', $pathSave, 'link', array(
 			'rel' => 'stylesheet',
-			'type' => 'text/css',
-			'href' => $pathSave
+			'type' => 'text/css'
 		));
 		
 		return $document->html();
 	}
-	
+
 	private function generatePackage(String $minifyClass, Document $document, String $selector, String $pathSave, String $tagName, array $attributes) {
-		if ($element = $document->first($selector)) {
-			$mf = new $minifyClass;
+		$pos = strripos($pathSave, '.');
+		$elements = $document->find($selector);
+		foreach ($elements as $i => $element) {
+			$mf = new $minifyClass();
 			
 			$files = explode(',', $element->getAttribute('files'));
 			foreach ($files as $fileName) {
@@ -127,7 +85,23 @@ final class Template {
 				$mf->add($fileName);
 			}
 			
-			$mf->minify($pathSave);
+			$_pathSave = substr_replace($pathSave, '-' . $i, $pos, 0);
+			
+			$mf->minify($_pathSave);
+			
+			if ($tagName === 'script') {
+				if ($element->hasAttribute('defer')) {
+					$attributes['defer'] = null;
+				}
+				
+				if ($element->hasAttribute('async')) {
+					$attributes['async'] = null;
+				}
+				
+				$attributes['src'] = $_pathSave;
+			} else {
+				$attributes['href'] = $_pathSave;
+			}
 			
 			$element->replace(new Element($tagName, null, $attributes));
 		}
@@ -146,7 +120,7 @@ final class Template {
 		}
 		
 		foreach ($this->filesList as $fileName => $time) {
-			if (filemtime($filename) > $time) {
+			if (filemtime($fileName) > $time) {
 				return true;
 			}
 		}

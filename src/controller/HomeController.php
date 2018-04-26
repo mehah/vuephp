@@ -6,5 +6,9 @@ class HomeController extends MainController {
 	public function init(): void {
 		parent::init();
 	}
+
+	public static function getApplicationPath(): ?String {
+		return "app/home";
+	}
 }
 
