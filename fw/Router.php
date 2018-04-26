@@ -34,7 +34,7 @@ final class Router {
 			}
 		}
 		
-		if (! is_file($controllerClass . '.php')) {
+		if (! is_file(str_replace('\\', '/', $controllerClass) . '.php')) {
 			throw new \Exception('Controlador não encontrado: ' . $controllerClass);
 		}
 		

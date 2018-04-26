@@ -1,9 +1,7 @@
 Vue.directive('goto', {
 	bind : function(el, binding, vnode) {
-		var url = Vue.CONTEXT_PATH + binding.value;
-
+		var url = Vue.CONTEXT_PATH + binding.value === '/' ? '' : binding.value;
 		var hasHref = el.hasAttribute('href');
-
 		var hash = '';
 		if (hasHref) {
 			if(el.getAttribute('href').indexOf('#') == 0) {
@@ -21,7 +19,7 @@ Vue.directive('goto', {
 				e.preventDefault();
 			}
 			
-			if (url.indexOf(location.href.pathname) === -1) {
+			if (url.indexOf(location.pathname) === -1) {
 				vnode.context.redirect(binding.value+hash);
 			}
 		};

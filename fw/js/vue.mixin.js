@@ -20,7 +20,8 @@ Vue.mixin({
 
 			param.cached = appName in Vue.options.components;
 
-			url = Vue.CONTEXT_PATH + (url === '/' ? '' : url);
+			url = Vue.CONTEXT_PATH + (url === '/' ? '' : url.indexOf('/#') === 0 ? url.substr(1) : url);
+			
 			this.$http.post(url, param, {
 				emulateJSON: true
 			}).then(function(data) {
