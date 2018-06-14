@@ -1,11 +1,10 @@
 <?php
 namespace src\controller;
 
-use fw\impl\AccessRule;
 use src\modal\City;
 use src\modal\User;
 
-class ManterUserController extends MainController implements AccessRule {
+class ManterUserController extends MainController {
 
 	public function init(int $id = null): void {
 		parent::init();
@@ -23,15 +22,4 @@ class ManterUserController extends MainController implements AccessRule {
 	public function alterar(User $entity): bool {
 		return $entity->update();
 	}
-
-	public static function getRules(): ?array {
-		return Array(
-			"alterar" => "ALTERAR_USER"
-		);
-	}
-
-	public static function getApplicationPath(): ?String {
-		return "app/manterUser";
-	}
 }
-

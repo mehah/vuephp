@@ -1,11 +1,10 @@
 <?php
 namespace src\controller;
 
-use fw\impl\AccessRule;
 use src\modal\City;
 use src\service\CityService;
 
-class ConsultarCityController extends MainController implements AccessRule {
+class ConsultarCityController extends MainController {
 
 	public function init(): void {
 		parent::init();
@@ -19,14 +18,6 @@ class ConsultarCityController extends MainController implements AccessRule {
 
 	public function deletarSelecionados(Array $entitys): bool {
 		return CityService::deletarCidades($entitys);
-	}
-
-	public static function getRules(): ?array {
-		return null;
-	}
-
-	public static function getApplicationPath(): ?String {
-		return "app/consultarCity";
 	}
 }
 

@@ -1,10 +1,9 @@
 <?php
 namespace src\controller;
 
-use fw\impl\AccessRule;
 use src\modal\City;
 
-class ManterCityController extends MainController implements AccessRule {
+class ManterCityController extends MainController {
 
 	public function init(int $id = null): void {
 		parent::init();
@@ -28,14 +27,6 @@ class ManterCityController extends MainController implements AccessRule {
 		}
 		
 		return $entity->update();
-	}
-
-	public static function getRules(): ?array {
-		return null;
-	}
-
-	public static function getApplicationPath(): ?String {
-		return "app/manterCity";
 	}
 }
 

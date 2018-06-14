@@ -10,8 +10,8 @@ use fw\lib\MatthiasMullie\Minify\CSS;
 final class Template {
 
 	private $file;
-
-	public $html;
+	
+	private $filePath;
 
 	private $templates = array();
 
@@ -20,10 +20,16 @@ final class Template {
 	private $modificationDate = 0;
 
 	private $hasTemplateModified = false;
+	
+	private $folder;
 
 	public function __construct(string $path) {
-		$this->file = Core::PATH_VIEW . '/' . $path;
+		$this->folder = dirname($path).'/';
 		
+		$this->filePath = $path;
+		
+		$this->file = Core::PATH_VIEW . '/' . $path;
+				
 		$this->html = $this->process($this->file);
 		
 		$this->modificationDate = $this->getModifiedDate();
@@ -31,7 +37,12 @@ final class Template {
 
 	private function process(string $fileName) {
 		$document = new Document();
-		$document->loadHtmlFile($fileName);
+		
+		$contentHTML = file_get_contents($fileName);
+		
+		$contentHTML = str_replace('${CONTEXT_PATH}', Project::getContextPath(), $contentHTML);
+		
+		$document->loadHtml($contentHTML);
 		
 		$elements = $document->find('template-include');
 		foreach ($elements as $e) {
@@ -40,7 +51,7 @@ final class Template {
 				throw new Exception('Existe um template-include sem o atributo src.');
 			}
 			
-			$template = new self($src);
+			$template = new self($this->folder.$src);
 			$this->templates[] = $template;
 			
 			$html = '<htmlfragment>' . $template->html . '</htmlfragment>';
@@ -56,10 +67,11 @@ final class Template {
 		}
 		
 		$path = Core::PATH_BUILD . substr($this->file, strlen(Core::PATH_VIEW));
+		
 		$pathSave = $path . '-package.js';
 		$this->generatePackage(JS::class, $document, 'js-package', $pathSave, 'script', array(
 			'type' => 'text/javascript',
-			'charset' => Project::$chatset
+			'charset' => Project::getChatset()
 		));
 		
 		$pathSave = $path . '-package.css';
@@ -76,10 +88,23 @@ final class Template {
 		$elements = $document->find($selector);
 		foreach ($elements as $i => $element) {
 			$mf = new $minifyClass();
+			if($minifyClass === CSS::class) {
+				$mf->setMaxImportSize(10);
+			}
 			
 			$files = explode(',', $element->getAttribute('files'));
 			foreach ($files as $fileName) {
-				$fileName = Core::PATH_VIEW . '/' . trim($fileName);
+				$fileName = trim($fileName);
+				if (! $fileName) {
+					continue;
+				}
+				
+				$fileName = Core::PATH_PUBLIC . '/' . $fileName;
+				
+				if (! is_file($fileName)) {
+					throw new \Exception('Arquivo \'' . $fileName . '\' não encontrado.');
+				}
+				
 				$this->filesList[$fileName] = filemtime($fileName);
 				
 				$mf->add($fileName);
@@ -98,9 +123,9 @@ final class Template {
 					$attributes['async'] = null;
 				}
 				
-				$attributes['src'] = $_pathSave;
+				$attributes['src'] = Project::getContextPath().$_pathSave;
 			} else {
-				$attributes['href'] = $_pathSave;
+				$attributes['href'] = Project::getContextPath().$_pathSave;
 			}
 			
 			$element->replace(new Element($tagName, null, $attributes));
@@ -134,6 +159,10 @@ final class Template {
 
 	public function hasTemplateModified(): bool {
 		return $this->hasTemplateModified;
+	}
+	
+	public function getFilePath() : String {
+		return $this->filePath;
 	}
 }
 

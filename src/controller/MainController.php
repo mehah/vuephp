@@ -7,7 +7,7 @@ abstract class MainController extends ComponentController {
 
 	protected $login;
 
-	protected function init(): void {
+	public function init(): void {
 		$this->login = $this->getSession()->getUserPrincipal();
 		$this->setRootData('logged', $this->login ? true : false);
 	}

@@ -1,11 +1,14 @@
 <?php
-namespace fw;
+namespace fw\router;
+
+use fw\Core;
+use fw\ComponentController;
 
 final class Router {
 
 	private static $list = array();
 
-	public static function registerTemplate(string $urlPath, string $templatePath) {
+	public static function registerTemplate(string $urlPath, string $templatePath, array $accessRule = null) {
 		if (! $urlPath || ! $templatePath) {
 			throw new \Exception();
 		}
@@ -19,11 +22,12 @@ final class Router {
 		$config['methodName'] = null;
 		$config['applicationPath'] = null;
 		$config['applicationName'] = null;
+		$config['accessRule'] = $accessRule;
 		
 		self::$list[$urlPath] = $config;
 	}
 
-	public static function registerController(string $urlPath, string $controllerClass, ?string $templatePath = null): void {
+	public static function registerController(string $urlPath, string $controllerClass, ?string $templatePath = null, ?string $applicationPath = null, array $accessRule = null): void {
 		if (! $urlPath || ! $controllerClass) {
 			throw new \Exception();
 		}
@@ -38,9 +42,7 @@ final class Router {
 			throw new \Exception('Controlador não encontrado: ' . $controllerClass);
 		}
 		
-		$applicationPath = $controllerClass::getApplicationPath();
 		$applicationName = null;
-		
 		if ($applicationPath) {
 			if (! is_dir(Core::PATH_VIEW . '/' . $applicationPath)) {
 				throw new \Exception('Aplicação não encontrada: ' . $applicationPath);
@@ -59,6 +61,7 @@ final class Router {
 		$config['methodName'] = 'init';
 		$config['applicationPath'] = $applicationPath;
 		$config['applicationName'] = $applicationName;
+		$config['accessRule'] = $accessRule;
 		
 		self::$list[$urlPath] = &$config;
 		
@@ -96,7 +99,7 @@ final class Router {
 		}
 	}
 
-	public static function registerApplication(string $urlPath, string $templatePath, string $applicationPath) {
+	public static function registerApplication(string $urlPath, string $templatePath, string $applicationPath, array $accessRule = null) {
 		if (! $urlPath || ! $templatePath || ! $applicationPath) {
 			throw new \Exception();
 		}
@@ -121,6 +124,7 @@ final class Router {
 		$config['methodName'] = null;
 		$config['applicationPath'] = $applicationPath;
 		$config['applicationName'] = $applicationName;
+		$config['accessRule'] = $accessRule;
 		
 		self::$list[$urlPath] = $config;
 	}
@@ -135,13 +139,19 @@ final class Router {
 				foreach ($list as $key => $config) {
 					if (strpos($url, $key) === 0) {
 						$values = array_slice(explode('/', $url), $config['numberParameters']);
-						return Array($config, $values);
+						return Array(
+							$config,
+							$values
+						);
 					}
 				}
 			}
 		}
 		
-		return Array($config, null);
+		return Array(
+			$config,
+			null
+		);
 	}
 }
 

@@ -20,9 +20,5 @@ class LoginController extends MainController {
 			$this->setData('logged', true);
 		}
 	}
-
-	public static function getApplicationPath(): ?String {
-		return "app/login";
-	}
 }
 

@@ -8,10 +8,15 @@ use fw\validator\ValidationSetup;
 abstract class ComponentController {
 
 	private $_VUE_DATA = null;
+	
+	private $route = null;
 
-	public function __construct() {
+	public function __construct(Array $route) {
 		$this->_VUE_DATA = new \stdClass();
+		$this->route = $route;
 	}
+	
+	public abstract function init();
 
 	public function getData(): object {
 		return $this->_VUE_DATA->d ?? ($this->_VUE_DATA->d = new \stdClass());
@@ -60,7 +65,13 @@ abstract class ComponentController {
 		return new \fw\ComponentController\Validation($hasError, $sharedData);
 	}
 
-	public abstract static function getApplicationPath(): ?String;
+	public function getApplicationPath() {
+		return $this->route['applicationPath'];
+	}
+	
+	public function getTemplatePath() {
+		return $this->route['templatePath'];
+	}
 }
 namespace fw\ComponentController;
 
